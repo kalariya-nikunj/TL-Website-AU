@@ -208,14 +208,16 @@ type ContactSubmission = {     // Firestore only
 
 ### Rules
 
-1. **Tokens live in `tailwind.config.ts` and `globals.css`.** No arbitrary hex values or
-   one-off spacing anywhere in components. If a value isn't a token, it doesn't get used.
+1. **Tokens live in `src/app/globals.css`.** Tailwind v4 is CSS-first — there is no
+   `tailwind.config.ts`; the palette, radius, and font tokens are declared in `@theme`
+   and `:root` in `globals.css`. No arbitrary hex values or one-off spacing anywhere in
+   components. If a value isn't a token, it doesn't get used.
 2. **One card style, one button style, one heading scale** across the entire site.
 3. **Reference sites are for layout inspiration only.** Never copy their CSS, assets, or
    copy. Rebuild the structure with our tokens and our components.
 4. All spacing from the Tailwind scale. All colours from the token palette.
 
-### Tokens (fill in during Phase 2 — placeholders for Phase 1)
+### Tokens (fill in during Phase 2 — shadcn's neutral defaults are in place for Phase 1)
 
 ```
 Colours
@@ -250,20 +252,20 @@ when a section component would do — that is how pages drift apart visually.
 ## 7. Build order
 
 ### Phase 0 — Foundation
-- [ ] `create-next-app` with TypeScript, Tailwind, App Router, `src/` dir
-- [ ] `shadcn init`
-- [ ] Git repo + push to GitHub
+- [x] `create-next-app` with TypeScript, Tailwind, App Router, `src/` dir
+- [x] `shadcn init`
+- [x] Git repo + push to GitHub — *committed; push pending credentials on the dev machine*
 - [ ] Connect Vercel, **deploy the empty app immediately**
-- [ ] Create folder structure above
-- [ ] Write `src/types/index.ts` and `src/content/site.ts`
+- [x] Create folder structure above
+- [x] Write `src/types/index.ts` and `src/content/site.ts`
 
 ### Phase 1 — Skeleton (structure only, deliberately unstyled)
-- [ ] Root layout with Header + Footer
-- [ ] Working nav (desktop + mobile), all links resolve
-- [ ] Every route in section 3 exists and renders
-- [ ] Placeholder content files with 3–5 dummy entries each
-- [ ] Section + card components built with real props and dummy data
-- [ ] Responsive layout correct at mobile / tablet / desktop
+- [x] Root layout with Header + Footer
+- [x] Working nav (desktop + mobile), all links resolve
+- [x] Every route in section 3 exists and renders
+- [x] Placeholder content files with 3–5 dummy entries each
+- [x] Section + card components built with real props and dummy data
+- [x] Responsive layout correct at mobile / tablet / desktop
 
 **Exit criteria: every page is reachable and structurally correct. Do not style yet.**
 
