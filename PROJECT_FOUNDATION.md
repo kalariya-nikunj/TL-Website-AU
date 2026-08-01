@@ -260,9 +260,11 @@ Spacing     Tailwind default scale
 - `dark-band` — the dark section treatment.
 - `hover-underline` — link underline that picks the contrast-correct colour for its ground.
 
-Focus is handled once, globally: `:focus-visible` gets a 2px lime outline at 2px offset.
-The shadcn primitives have had their own `outline-none` and ring utilities stripped so
-nothing can opt out.
+Focus is handled once, globally: `:focus-visible` gets a 2px lime outline at 2px offset,
+over a `primary-dark` keyline that reads as three bands (dark, lime, dark). Lime alone is
+1.29:1 against the page — under the 3:1 WCAG 2.2 asks of a focus indicator — so the dark
+outer boundary carries the contrast at 16.1:1. The shadcn primitives have had their own
+`outline-none` and ring utilities stripped so nothing can opt out.
 
 ### Core components to build
 
@@ -303,8 +305,8 @@ when a section component would do — that is how pages drift apart visually.
 - [x] Load fonts via `next/font` — Archivo + Inter
 - [x] Restyle shadcn primitives to match tokens
 - [x] Apply across all components
+- [x] Focus ring given a `primary-dark` keyline so it clears WCAG 3:1 on light surfaces
 - [ ] **Open:** pick an error/destructive colour — not covered by the brand palette
-- [ ] **Open:** confirm the lime focus ring, which fails WCAG 3:1 on light surfaces
 
 ### Phase 3 — Sections and polish
 - [ ] Build reference-inspired layouts section by section

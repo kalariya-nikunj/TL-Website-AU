@@ -191,10 +191,22 @@
    * One focus treatment for every interactive element. Declared here rather
    * than per-component so nothing can opt out — the primitives have had their
    * own `outline-none` and ring utilities stripped for this reason.
+   *
+   * Lime on its own measures 1.29:1 against the page, well under the 3:1 that
+   * WCAG 2.2 asks of a focus indicator. The shadow spreads 6px while the
+   * outline occupies 2–4px, and outlines paint over shadows, so the ring lands
+   * as three bands: primary-dark, lime, primary-dark. The outer boundary is
+   * now dark against the page (16.1:1) and the lime reads against the dark
+   * either side of it (12.4:1).
+   *
+   * Deliberately in `base`: the two Radix panels that carry a `shadow-*`
+   * utility keep it and fall back to the outline alone, since the utilities
+   * layer outranks this rule.
    */
   :focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
+    box-shadow: 0 0 0 6px var(--color-primary-dark);
   }
 }
 
