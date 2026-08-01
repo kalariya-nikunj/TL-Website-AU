@@ -12,16 +12,24 @@ export function NewsStrip({ items }: NewsStripProps) {
   if (items.length === 0) return null;
 
   return (
-    <aside aria-label="Announcements" className="border-b bg-muted/40">
+    <aside
+      aria-label="Announcements"
+      className="border-b border-border bg-surface"
+    >
       <Container className="py-3">
         <ul className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:gap-6">
           {items.map((item) => (
-            <li key={item.id} className="flex items-center gap-2 text-sm">
+            <li key={item.id} className="flex items-center gap-2 text-small">
               <Badge variant="secondary">{item.label}</Badge>
               {item.href ? (
-                <Link href={item.href}>{item.text}</Link>
+                <Link
+                  href={item.href}
+                  className="hover-underline text-ink transition-colors hover:text-primary"
+                >
+                  {item.text}
+                </Link>
               ) : (
-                <span>{item.text}</span>
+                <span className="text-muted">{item.text}</span>
               )}
             </li>
           ))}

@@ -11,15 +11,21 @@ import { footerLinks, navLinks, site } from "@/content/site";
  */
 export function Header() {
   return (
-    <header className="border-b">
+    <header className="border-b border-border bg-surface">
       <Container className="flex h-16 items-center justify-between gap-4">
-        <Link href="/" className="font-heading text-lg font-semibold">
+        <Link href="/" className="font-display text-h3 text-primary">
           {site.name}
         </Link>
 
         <nav aria-label="Main" className="hidden items-center gap-6 md:flex">
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="text-sm">
+            <Link
+              key={link.href}
+              href={link.href}
+              /* Lime fails contrast as an underline on white, so light
+                 surfaces get accent-dark. See globals.css. */
+              className="hover-underline text-small font-medium text-ink transition-colors hover:text-primary"
+            >
               {link.label}
             </Link>
           ))}

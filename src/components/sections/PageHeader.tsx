@@ -15,16 +15,14 @@ export function PageHeader({
   children,
 }: PageHeaderProps) {
   return (
-    <div className="border-b py-10 md:py-14">
+    <div className="border-b border-border bg-primary-tint py-12 md:py-16">
       <Container>
-        {eyebrow && (
-          <p className="text-sm font-medium text-muted-foreground">{eyebrow}</p>
-        )}
-        <h1 className="mt-1 max-w-3xl font-heading text-3xl font-semibold md:text-4xl">
+        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+        <h1 className="mt-2 max-w-3xl font-display text-h2 text-primary-dark">
           {title}
         </h1>
         {description && (
-          <p className="mt-3 max-w-2xl text-muted-foreground">{description}</p>
+          <p className="mt-4 max-w-2xl text-body text-muted">{description}</p>
         )}
         {children && <div className="mt-6">{children}</div>}
       </Container>

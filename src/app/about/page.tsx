@@ -25,7 +25,7 @@ export default function AboutPage() {
 
       <Section ariaLabelledBy="about-what">
         <SectionHeader id="about-what" title="What the lab is for" />
-        <div className="mt-6 grid max-w-4xl gap-4 text-muted-foreground">
+        <div className="mt-6 grid max-w-4xl gap-4 text-muted">
           <p>
             Placeholder copy. The lab exists so that a student with an idea has
             somewhere to make it real — not eventually, and not only if it is

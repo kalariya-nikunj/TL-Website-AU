@@ -54,17 +54,17 @@ export default async function ProjectPage({ params }: PageProps) {
           <div>
             <ImagePlaceholder
               label={project.title}
-              className="w-full rounded-xl"
+              className="w-full rounded-lg"
             />
-            <div className="mt-8 max-w-2xl text-muted-foreground">
+            <div className="mt-8 max-w-2xl text-muted">
               <p>{project.description}</p>
             </div>
           </div>
 
-          <div className="flex h-fit flex-col gap-4 rounded-xl border p-6 text-sm">
+          <div className="flex h-fit flex-col gap-4 rounded-lg border bg-surface p-6 text-small">
             <div>
               <p className="font-medium">Team</p>
-              <ul className="mt-2 flex flex-col gap-1 text-muted-foreground">
+              <ul className="mt-2 flex flex-col gap-1 text-muted">
                 {project.team.map((member, index) => (
                   <li key={`${member}-${index}`}>{member}</li>
                 ))}
@@ -72,7 +72,7 @@ export default async function ProjectPage({ params }: PageProps) {
             </div>
             <div>
               <p className="font-medium">Year</p>
-              <p className="mt-1 text-muted-foreground">{project.year}</p>
+              <p className="mt-1 text-muted">{project.year}</p>
             </div>
           </div>
         </div>

@@ -82,7 +82,7 @@ export default function HomePage() {
             ))}
           </CardGrid>
         ) : (
-          <p className="mt-8 text-muted-foreground">
+          <p className="mt-8 text-muted">
             Nothing scheduled right now. Check back at the start of term.
           </p>
         )}

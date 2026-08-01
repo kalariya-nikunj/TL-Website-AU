@@ -84,7 +84,7 @@ export function RegistrationForm({
         <Button type="submit" disabled>
           Register for {eventTitle}
         </Button>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 text-sm text-muted">
           Registration is enabled in Phase 4, once sign-in and Firestore are connected.
         </p>
       </div>

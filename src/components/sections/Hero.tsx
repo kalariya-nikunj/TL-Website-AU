@@ -28,26 +28,28 @@ export function Hero({
   mediaLabel,
 }: HeroProps) {
   return (
-    <section className="border-b py-12 md:py-20">
+    /* The signature pairing: lime on primary-dark. */
+    <section className="dark-band py-16 md:py-24">
       <Container className="grid items-center gap-10 lg:grid-cols-2">
         <div className="max-w-2xl">
-          {eyebrow && (
-            <p className="text-sm font-medium text-muted-foreground">{eyebrow}</p>
-          )}
-          <h1 className="mt-2 font-heading text-4xl font-semibold md:text-5xl">
-            {title}
-          </h1>
-          <p className="mt-4 text-lg text-muted-foreground">{description}</p>
+          {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+          <h1 className="mt-3 font-display text-h1">{title}</h1>
+          <p className="mt-5 text-body text-background/75">{description}</p>
 
           {(primaryAction || secondaryAction) && (
             <div className="mt-8 flex flex-wrap gap-3">
               {primaryAction && (
-                <Button asChild>
+                <Button asChild size="lg" variant="accent">
                   <Link href={primaryAction.href}>{primaryAction.label}</Link>
                 </Button>
               )}
               {secondaryAction && (
-                <Button asChild variant="outline">
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="border-background/30 bg-transparent text-background hover:bg-background/10 hover:text-background"
+                >
                   <Link href={secondaryAction.href}>{secondaryAction.label}</Link>
                 </Button>
               )}
@@ -56,7 +58,10 @@ export function Hero({
         </div>
 
         {mediaLabel && (
-          <ImagePlaceholder label={mediaLabel} className="w-full rounded-xl" />
+          <ImagePlaceholder
+            label={mediaLabel}
+            className="w-full rounded-lg border border-background/15 bg-background/10 text-background/60"
+          />
         )}
       </Container>
     </section>

@@ -6,11 +6,11 @@ import { Container } from "@/components/layout/Container";
 export default function NotFound() {
   return (
     <Container className="flex min-h-[60vh] flex-col items-start justify-center py-16">
-      <p className="text-sm font-medium text-muted-foreground">404</p>
-      <h1 className="mt-2 font-heading text-3xl font-semibold md:text-4xl">
+      <p className="eyebrow">404</p>
+      <h1 className="mt-2 font-display text-h2 text-primary-dark">
         Page not found
       </h1>
-      <p className="mt-3 max-w-md text-muted-foreground">
+      <p className="mt-3 max-w-md text-muted">
         That page does not exist — it may have moved, or the link may be wrong.
       </p>
       <Button asChild className="mt-8">

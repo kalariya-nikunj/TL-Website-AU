@@ -23,13 +23,13 @@ export function FacilityCard({ facility }: FacilityCardProps) {
 
         <CardHeader>
           <CardTitle>
-            <Link href={`/facilities/${facility.slug}`}>{facility.name}</Link>
+            <Link href={`/facilities/${facility.slug}`} className="transition-colors hover:text-primary">{facility.name}</Link>
           </CardTitle>
           <CardDescription>{facility.category}</CardDescription>
         </CardHeader>
 
         <CardContent className="flex flex-col gap-3">
-          <p className="text-muted-foreground">{facility.shortDescription}</p>
+          <p className="text-muted">{facility.shortDescription}</p>
           <div>
             <Badge variant={facility.requiresTraining ? "default" : "secondary"}>
               {facility.requiresTraining ? "Induction required" : "Open access"}

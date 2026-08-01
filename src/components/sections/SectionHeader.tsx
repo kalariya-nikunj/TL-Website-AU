@@ -34,21 +34,21 @@ export function SectionHeader({
         <Heading
           id={id}
           className={cn(
-            "font-heading font-semibold",
-            Heading === "h1" ? "text-3xl md:text-4xl" : "text-2xl md:text-3xl",
+            "font-display text-primary-dark",
+            Heading === "h1" ? "text-h1" : "text-h2",
           )}
         >
           {title}
         </Heading>
         {description && (
-          <p className="mt-2 text-muted-foreground">{description}</p>
+          <p className="mt-3 text-body text-muted">{description}</p>
         )}
       </div>
 
       {action && (
         <Link
           href={action.href}
-          className="inline-flex shrink-0 items-center gap-1 text-sm font-medium"
+          className="hover-underline inline-flex shrink-0 items-center gap-1 text-small font-medium text-primary"
         >
           {action.label}
           <ArrowRightIcon className="size-4" aria-hidden="true" />

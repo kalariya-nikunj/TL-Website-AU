@@ -33,7 +33,7 @@ export default function HelpPage() {
           title="Getting access"
           description="Three steps, and none of them cost anything."
         />
-        <ol className="mt-6 flex max-w-2xl list-decimal flex-col gap-3 pl-5 text-muted-foreground">
+        <ol className="mt-6 flex max-w-2xl list-decimal flex-col gap-3 pl-5 text-muted">
           <li>
             Come to the lab during open hours and register at the front desk.
           </li>
@@ -60,7 +60,7 @@ export default function HelpPage() {
       <Section ariaLabelledBy="visit">
         <SectionHeader id="visit" title="Find us" />
         <div className="mt-6 grid gap-8 sm:grid-cols-2">
-          <address className="flex flex-col gap-1 text-muted-foreground not-italic">
+          <address className="flex flex-col gap-1 text-muted not-italic">
             {contact.address.map((line) => (
               <span key={line}>{line}</span>
             ))}
@@ -72,7 +72,7 @@ export default function HelpPage() {
             </a>
           </address>
 
-          <dl className="flex flex-col gap-2 text-muted-foreground">
+          <dl className="flex flex-col gap-2 text-muted">
             {contact.hours.map((slot) => (
               <div key={slot.label} className="flex justify-between gap-4">
                 <dt>{slot.label}</dt>

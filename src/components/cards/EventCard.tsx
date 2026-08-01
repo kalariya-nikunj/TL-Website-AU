@@ -24,7 +24,7 @@ export function EventCard({ event }: EventCardProps) {
 
         <CardHeader>
           <CardTitle>
-            <Link href={`/workshops/${event.slug}`}>{event.title}</Link>
+            <Link href={`/workshops/${event.slug}`} className="transition-colors hover:text-primary">{event.title}</Link>
           </CardTitle>
           <CardDescription>
             {formatEventRange(event.startsAt, event.endsAt)}
@@ -32,8 +32,8 @@ export function EventCard({ event }: EventCardProps) {
         </CardHeader>
 
         <CardContent className="flex flex-col gap-3">
-          <p className="text-muted-foreground">{event.shortDescription}</p>
-          <p className="text-sm text-muted-foreground">{event.location}</p>
+          <p className="text-muted">{event.shortDescription}</p>
+          <p className="text-sm text-muted">{event.location}</p>
           <div className="flex flex-wrap gap-2">
             <Badge variant={event.registrationOpen ? "default" : "secondary"}>
               {event.registrationOpen ? "Registration open" : "Drop in"}

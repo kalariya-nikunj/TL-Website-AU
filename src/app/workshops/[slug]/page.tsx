@@ -60,35 +60,35 @@ export default async function EventPage({ params }: PageProps) {
           <div>
             <ImagePlaceholder
               label={event.title}
-              className="w-full rounded-xl"
+              className="w-full rounded-lg"
             />
-            <div className="mt-8 max-w-2xl text-muted-foreground">
+            <div className="mt-8 max-w-2xl text-muted">
               <p>{event.description}</p>
             </div>
           </div>
 
-          <dl className="flex h-fit flex-col gap-4 rounded-xl border p-6 text-sm">
+          <dl className="flex h-fit flex-col gap-4 rounded-lg border bg-surface p-6 text-small">
             <div>
               <dt className="font-medium">When</dt>
-              <dd className="mt-1 text-muted-foreground">
+              <dd className="mt-1 text-muted">
                 {formatEventRange(event.startsAt, event.endsAt)}
               </dd>
             </div>
             <div>
               <dt className="font-medium">Where</dt>
-              <dd className="mt-1 text-muted-foreground">{event.location}</dd>
+              <dd className="mt-1 text-muted">{event.location}</dd>
             </div>
             {typeof event.capacity === "number" && (
               <div>
                 <dt className="font-medium">Capacity</dt>
-                <dd className="mt-1 text-muted-foreground">
+                <dd className="mt-1 text-muted">
                   {event.capacity} students
                 </dd>
               </div>
             )}
             <div>
               <dt className="font-medium">Cost</dt>
-              <dd className="mt-1 text-muted-foreground">Free</dd>
+              <dd className="mt-1 text-muted">Free</dd>
             </div>
           </dl>
         </div>
@@ -108,7 +108,7 @@ export default async function EventPage({ params }: PageProps) {
           {event.registrationOpen ? (
             <RegistrationForm eventSlug={event.slug} eventTitle={event.title} />
           ) : (
-            <p className="text-muted-foreground">
+            <p className="text-muted">
               See the <Link href="/help">help page</Link> for directions to the
               lab.
             </p>

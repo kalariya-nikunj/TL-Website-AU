@@ -47,7 +47,7 @@ export function MobileNav({ links, secondaryLinks = [], siteName }: MobileNavPro
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="border-b py-3 text-base"
+              className="hover-underline border-b py-3 text-base text-ink transition-colors hover:text-primary"
             >
               {link.label}
             </Link>
@@ -60,7 +60,7 @@ export function MobileNav({ links, secondaryLinks = [], siteName }: MobileNavPro
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="py-2 text-sm text-muted-foreground"
+                  className="hover-underline py-2 text-small text-muted transition-colors hover:text-primary"
                 >
                   {link.label}
                 </Link>

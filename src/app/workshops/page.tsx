@@ -36,7 +36,7 @@ export default function WorkshopsPage() {
             ))}
           </CardGrid>
         ) : (
-          <p className="mt-6 text-muted-foreground">
+          <p className="mt-6 text-muted">
             Nothing scheduled right now. Check back at the start of term.
           </p>
         )}
@@ -59,7 +59,7 @@ export default function WorkshopsPage() {
           title="Lab calendar"
           description="The Google Calendar embed lands in Phase 4 — it becomes the source of truth for dates."
         />
-        <div className="mt-6 flex aspect-video w-full items-center justify-center rounded-xl bg-muted text-sm text-muted-foreground">
+        <div className="mt-6 flex aspect-video w-full items-center justify-center rounded-lg bg-primary-tint text-sm text-muted">
           Calendar embed — Phase 4
         </div>
       </Section>

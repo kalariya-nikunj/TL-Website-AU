@@ -217,23 +217,52 @@ type ContactSubmission = {     // Firestore only
    copy. Rebuild the structure with our tokens and our components.
 4. All spacing from the Tailwind scale. All colours from the token palette.
 
-### Tokens (fill in during Phase 2 — shadcn's neutral defaults are in place for Phase 1)
+### Tokens (defined in Phase 2 — `src/app/globals.css`)
+
+Tailwind's default palette is reset (`--color-*: initial`), so these eleven values are
+the only colours that exist. `bg-red-500` and friends do not compile.
 
 ```
 Colours
-  --primary        anchor to Ahmedabad University brand colour
-  --accent         one energetic accent for CTAs and highlights
-  --neutral-900    body text / dark surfaces
-  --neutral-100    borders / dividers
-  --background     off-white page background
+  --color-primary        #6E1428   deep maroon — university brand colour
+  --color-primary-dark   #3D0B18   near-black maroon — dark sections, footer
+  --color-primary-mid    #96253C   hover states
+  --color-primary-tint   #F7EAED   subtle backgrounds
+  --color-accent         #B8F135   high-vis lime — CTAs, focus rings, active states
+  --color-accent-dark    #4A6B00   text-safe green (green text on light backgrounds)
+  --color-background     #FAF8F6   warm bone page background
+  --color-surface        #FFFFFF   cards
+  --color-ink            #1A1113   body text
+  --color-muted          #6B6062   secondary text
+  --color-border         #E7E2E0   dividers
 
-Typography
-  Display   technical/geometric sans — headings (e.g. Space Grotesk / Sora / Archivo)
-  Body      Inter
-
-Radius      one value, applied consistently
+Typography  Archivo 600/700 (--font-display) · Inter 400/500 (--font-body)
+Type scale  text-h1 / text-h2 / text-h3 / text-body / text-small + the `eyebrow` utility
+Radius      --radius: 0.5rem — every rounded-* step maps to it
 Spacing     Tailwind default scale
 ```
+
+### Colour usage rules
+
+1. Maroon is dominant. Lime is an accent only — roughly 10% of any screen: primary CTA
+   buttons, focus rings, active states, hover underlines, small graphic accents. Never
+   large background areas, never body text.
+2. Never place maroon and lime directly adjacent as large blocks. Separate with neutrals.
+3. Lime text on white fails contrast — use `accent-dark` for green text on light
+   backgrounds. Lime on `primary-dark` is the signature pairing (hero, footer).
+4. Dark sections use the `dark-band` utility: `primary-dark` ground, `background` text,
+   lime accents.
+
+### Composed utilities
+
+- `eyebrow` — the full eyebrow role in one class (size, family, weight, tracking, case,
+  colour). Flips to lime automatically inside `dark-band`.
+- `dark-band` — the dark section treatment.
+- `hover-underline` — link underline that picks the contrast-correct colour for its ground.
+
+Focus is handled once, globally: `:focus-visible` gets a 2px lime outline at 2px offset.
+The shadcn primitives have had their own `outline-none` and ring utilities stripped so
+nothing can opt out.
 
 ### Core components to build
 
@@ -270,10 +299,12 @@ when a section component would do — that is how pages drift apart visually.
 **Exit criteria: every page is reachable and structurally correct. Do not style yet.**
 
 ### Phase 2 — Design system
-- [ ] Define real tokens in Tailwind config + `globals.css`
-- [ ] Load fonts via `next/font`
-- [ ] Restyle shadcn primitives to match tokens
-- [ ] Apply across all components
+- [x] Define real tokens in `globals.css` (Tailwind v4 is CSS-first — no config file)
+- [x] Load fonts via `next/font` — Archivo + Inter
+- [x] Restyle shadcn primitives to match tokens
+- [x] Apply across all components
+- [ ] **Open:** pick an error/destructive colour — not covered by the brand palette
+- [ ] **Open:** confirm the lime focus ring, which fails WCAG 3:1 on light surfaces
 
 ### Phase 3 — Sections and polish
 - [ ] Build reference-inspired layouts section by section

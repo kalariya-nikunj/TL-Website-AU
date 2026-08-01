@@ -30,7 +30,7 @@ export function ImagePlaceholder({
       role="img"
       aria-label={label}
       className={cn(
-        "flex items-center justify-center overflow-hidden bg-muted p-4 text-center text-xs text-muted-foreground",
+        "flex items-center justify-center overflow-hidden bg-primary-tint p-4 text-center text-xs text-muted",
         ratioClass[ratio],
         className,
       )}

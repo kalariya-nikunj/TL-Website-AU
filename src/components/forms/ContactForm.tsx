@@ -44,7 +44,7 @@ export function ContactForm() {
         <Button type="submit" disabled>
           Send message
         </Button>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 text-sm text-muted">
           Sending is enabled in Phase 4, once Firestore is connected.
         </p>
       </div>

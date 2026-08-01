@@ -23,8 +23,8 @@ export default function MyRegistrationsPage() {
       />
 
       <Section>
-        <div className="flex max-w-xl flex-col items-start gap-4 rounded-xl border p-8">
-          <p className="text-muted-foreground">
+        <div className="flex max-w-xl flex-col items-start gap-4 rounded-lg border bg-surface p-8">
+          <p className="text-muted">
             You are not signed in. Registrations are tied to your university
             Google account.
           </p>

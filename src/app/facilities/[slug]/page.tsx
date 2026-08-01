@@ -52,18 +52,18 @@ export default async function FacilityPage({ params }: PageProps) {
           <div>
             <ImagePlaceholder
               label={facility.name}
-              className="w-full rounded-xl"
+              className="w-full rounded-lg"
             />
-            <div className="mt-8 max-w-2xl text-muted-foreground">
+            <div className="mt-8 max-w-2xl text-muted">
               <p>{facility.description}</p>
             </div>
           </div>
 
-          <dl className="flex h-fit flex-col gap-4 rounded-xl border p-6 text-sm">
+          <dl className="flex h-fit flex-col gap-4 rounded-lg border bg-surface p-6 text-small">
             <p className="font-medium">Specifications</p>
             {facility.specs.map((spec) => (
               <div key={spec.label} className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">{spec.label}</dt>
+                <dt className="text-muted">{spec.label}</dt>
                 <dd className="text-right">{spec.value}</dd>
               </div>
             ))}
@@ -78,7 +78,7 @@ export default async function FacilityPage({ params }: PageProps) {
             title="Safety"
             description="Non-negotiable. Breaking these rules ends lab access."
           />
-          <ul className="mt-6 flex max-w-2xl list-disc flex-col gap-2 pl-5 text-muted-foreground">
+          <ul className="mt-6 flex max-w-2xl list-disc flex-col gap-2 pl-5 text-muted">
             {facility.safetyNotes.map((note) => (
               <li key={note}>{note}</li>
             ))}

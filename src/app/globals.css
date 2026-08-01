@@ -2,129 +2,255 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/*
+ * Dark mode is pinned to an explicit `.dark` class that nothing applies in v1.
+ * Without this the `dark:` variant would follow the OS setting and the vendored
+ * primitives' dark styles would leak over a light-only brand palette.
+ */
 @custom-variant dark (&:is(.dark *));
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+/* ==========================================================================
+   1. BRAND TOKENS — the single source of truth
+   Every colour on the site is one of the eleven values below. They are declared
+   here once, as literals, and nowhere else. Tailwind's default palette is reset
+   so that off-palette colours (bg-red-500, text-gray-400, …) do not exist.
+   ========================================================================== */
+
+@theme {
+  --color-*: initial;
+
+  /* Keyword colours the primitives rely on — not part of the palette. */
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-inherit: inherit;
+
+  /* Maroon — the dominant colour. */
+  --color-primary: #6e1428;
+  --color-primary-dark: #3d0b18;
+  --color-primary-mid: #96253c;
+  --color-primary-tint: #f7eaed;
+
+  /* Lime — accent only, roughly 10% of any screen. */
+  --color-accent: #b8f135;
+  --color-accent-dark: #4a6b00;
+
+  /* Neutrals. */
+  --color-background: #faf8f6;
+  --color-surface: #ffffff;
+  --color-ink: #1a1113;
+  --color-muted: #6b6062;
+  --color-border: #e7e2e0;
+
+  /*
+   * NOT part of the brand brief. Carried over unchanged from the shadcn
+   * defaults so form error states keep working — needs a real decision before
+   * Phase 4 wires up validation.
+   */
+  --color-destructive: oklch(0.577 0.245 27.325);
+
+  /* ---- Radius: one value, applied consistently ------------------------- */
+  --radius: 0.5rem;
+  --radius-xs: var(--radius);
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: var(--radius);
+  --radius-2xl: var(--radius);
+  --radius-3xl: var(--radius);
+  --radius-4xl: var(--radius);
+
+  /* ---- Type scale ------------------------------------------------------ */
+  --text-h1: clamp(2.5rem, 5vw, 4rem);
+  --text-h1--line-height: 1.05;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h1--font-weight: 700;
+
+  --text-h2: clamp(2rem, 3.5vw, 2.75rem);
+  --text-h2--line-height: 1.1;
+  --text-h2--letter-spacing: -0.02em;
+  --text-h2--font-weight: 700;
+
+  --text-h3: 1.5rem;
+  --text-h3--line-height: 1.25;
+  --text-h3--letter-spacing: -0.01em;
+  --text-h3--font-weight: 600;
+
+  --text-body: 1rem;
+  --text-body--line-height: 1.65;
+  --text-body--font-weight: 400;
+
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.5;
+
+  --text-eyebrow: 0.75rem;
+  --text-eyebrow--line-height: 1.2;
+  --text-eyebrow--letter-spacing: 0.08em;
+  --text-eyebrow--font-weight: 600;
+
+  /*
+   * Tailwind's own size steps are re-pointed at the scale above so that the
+   * generic classes and the named ones cannot drift apart.
+   */
+  --text-base: var(--text-body);
+  --text-base--line-height: 1.65;
+  --text-sm: var(--text-small);
+  --text-sm--line-height: 1.5;
 }
 
+/* ==========================================================================
+   2. FONTS
+   next/font sets --font-display and --font-body on <html>. `@theme inline`
+   substitutes the var() reference straight into the utility rather than
+   re-declaring it, so there is no self-reference here.
+   ========================================================================== */
+
+@theme inline {
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+
+  /* Aliases so untouched vendored primitives inherit the right family. */
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-display);
+}
+
+/* ==========================================================================
+   3. SEMANTIC BRIDGE
+   shadcn primitives are written against role names (card, popover, ring, …).
+   Each one is an alias pointing at a brand token above — no new values.
+   ========================================================================== */
+
+@theme {
+  --color-foreground: var(--color-ink);
+  --color-primary-foreground: var(--color-surface);
+  --color-accent-foreground: var(--color-primary-dark);
+  --color-secondary: var(--color-primary-tint);
+  --color-secondary-foreground: var(--color-primary);
+  --color-muted-foreground: var(--color-muted);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-ink);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-ink);
+  --color-input: var(--color-border);
+  --color-ring: var(--color-accent);
+}
+
+/*
+ * Compatibility shim: a few vendored files read the bare role names directly
+ * through var() rather than through a utility class (sonner.tsx, for one).
+ * These are aliases, not definitions.
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: var(--color-background);
+  --foreground: var(--color-ink);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-surface);
+  --secondary: var(--color-primary-tint);
+  --secondary-foreground: var(--color-primary);
+  --muted-foreground: var(--color-muted);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-primary-dark);
+  --destructive: var(--color-destructive);
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --ring: var(--color-accent);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
+/* ==========================================================================
+   4. BASE
+   ========================================================================== */
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
   }
+
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--color-background);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    line-height: 1.65;
   }
-  html {
-    @apply font-sans;
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+  }
+
+  /*
+   * One focus treatment for every interactive element. Declared here rather
+   * than per-component so nothing can opt out — the primitives have had their
+   * own `outline-none` and ring utilities stripped for this reason.
+   */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+/* ==========================================================================
+   5. COMPOSED UTILITIES
+   ========================================================================== */
+
+/*
+ * The eyebrow is a full type role — size, family, weight, tracking, case and
+ * colour travel together, so it is one utility rather than six classes.
+ * Sits green-on-light by default; `dark-band` flips it to lime.
+ */
+@utility eyebrow {
+  font-family: var(--font-display);
+  font-size: var(--text-eyebrow);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--eyebrow-color, var(--color-accent-dark));
+}
+
+/*
+ * A dark band: primary-dark ground, bone text, lime accents. The signature
+ * pairing — used by the hero and the footer.
+ */
+@utility dark-band {
+  background-color: var(--color-primary-dark);
+  color: var(--color-background);
+  --eyebrow-color: var(--color-accent);
+  --underline-color: var(--color-accent);
+}
+
+/* Underline that reads as a link affordance without failing contrast. */
+@utility hover-underline {
+  text-decoration-line: none;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
+
+  &:hover {
+    text-decoration-line: underline;
+    text-decoration-color: var(--underline-color, var(--color-accent-dark));
+  }
+}
+
+/* ==========================================================================
+   6. MOTION
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

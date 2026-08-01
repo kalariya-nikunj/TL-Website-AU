@@ -23,7 +23,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
         <CardHeader>
           <CardTitle>
-            <Link href={`/portfolio/${project.slug}`}>{project.title}</Link>
+            <Link href={`/portfolio/${project.slug}`} className="transition-colors hover:text-primary">{project.title}</Link>
           </CardTitle>
           <CardDescription>
             {project.year} · {project.team.length}{" "}
@@ -32,7 +32,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
         </CardHeader>
 
         <CardContent className="flex flex-col gap-3">
-          <p className="text-muted-foreground">{project.shortDescription}</p>
+          <p className="text-muted">{project.shortDescription}</p>
           <div className="flex flex-wrap gap-2">
             {project.tags.map((tag) => (
               <Badge key={tag} variant="outline">
