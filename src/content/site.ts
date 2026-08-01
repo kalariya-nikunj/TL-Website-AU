@@ -85,8 +85,12 @@ export const headerNav: NavItem[] = [
 export const headerConfig = {
   /** Nav link colour once the header has a solid background. */
   navColor: "ink",
-  /** Nav link colour while transparent over a dark hero. */
-  topNavColor: "background",
+  /**
+   * Nav link colour while the header is transparent. The homepage hero is a
+   * light bone panel at scroll 0, so this has to be dark — switch to
+   * "background" if a dark full-bleed hero ever replaces it.
+   */
+  topNavColor: "primary",
   /** Wordmark colour. Falls back to `topNavColor` while transparent. */
   logoTextColor: "primary",
   /** Underline and hover colour. */

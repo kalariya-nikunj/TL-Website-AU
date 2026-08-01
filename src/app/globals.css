@@ -73,6 +73,12 @@
   --radius-4xl: var(--radius);
 
   /* ---- Type scale ------------------------------------------------------ */
+  /* Oversized display line, used by the homepage hero only. */
+  --text-hero: clamp(3rem, 9vw, 8.5rem);
+  --text-hero--line-height: 0.95;
+  --text-hero--letter-spacing: -0.03em;
+  --text-hero--font-weight: 700;
+
   --text-h1: clamp(2.5rem, 5vw, 4rem);
   --text-h1--line-height: 1.05;
   --text-h1--letter-spacing: -0.02em;

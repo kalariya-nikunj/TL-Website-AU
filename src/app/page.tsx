@@ -4,7 +4,7 @@ import { ProjectCard } from "@/components/cards/ProjectCard";
 import { TeamCard } from "@/components/cards/TeamCard";
 import { CTASection } from "@/components/sections/CTASection";
 import { CardGrid } from "@/components/sections/CardGrid";
-import { Hero } from "@/components/sections/Hero";
+import { VideoHero } from "@/components/sections/VideoHero";
 import { NewsStrip } from "@/components/sections/NewsStrip";
 import { Section } from "@/components/sections/Section";
 import { SectionHeader } from "@/components/sections/SectionHeader";
@@ -29,15 +29,8 @@ export default function HomePage() {
 
   return (
     <>
-      {/* 1. Hero */}
-      <Hero
-        eyebrow={site.university}
-        title={site.tagline}
-        description={site.description}
-        primaryAction={{ label: "Browse workshops", href: "/workshops" }}
-        secondaryAction={{ label: "See the facilities", href: "/facilities" }}
-        mediaLabel="Hero media — rotating slides or video, added in Phase 3"
-      />
+      {/* 1. Hero — scroll-driven video sequence */}
+      <VideoHero />
 
       {/* 2. News */}
       <NewsStrip items={news} />

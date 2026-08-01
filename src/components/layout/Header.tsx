@@ -223,10 +223,7 @@ export function Header({ variant }: HeaderProps) {
               <span
                 aria-hidden="true"
                 className={cn(
-                  "grid shrink-0 place-items-center rounded-lg font-display transition-all duration-300 ease-out",
-                  transparent
-                    ? "bg-accent text-primary-dark"
-                    : "bg-primary text-surface",
+                  "grid shrink-0 place-items-center rounded-lg bg-primary font-display text-surface transition-all duration-300 ease-out",
                   compact
                     ? "size-10 text-body"
                     : "size-10 text-body lg:size-16 lg:text-h3",
@@ -317,11 +314,7 @@ export function Header({ variant }: HeaderProps) {
                 </ul>
               </nav>
 
-              <Button
-                asChild
-                size="sm"
-                variant={transparent ? "accent" : "default"}
-              >
+              <Button asChild size="sm" variant="default">
                 <Link href="/login" onFocus={scheduleClose}>
                   Sign in
                 </Link>
