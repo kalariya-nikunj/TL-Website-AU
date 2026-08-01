@@ -40,6 +40,21 @@ export type Spec = {
   value: string;
 };
 
+/** Keys onto the lucide icon map in Footer.tsx. */
+export type SocialIcon = "instagram" | "linkedin" | "youtube" | "github";
+
+export type Social = {
+  /** Doubles as the `aria-label` — the footer renders icons with no visible text. */
+  label: string;
+  url: string;
+  icon: SocialIcon;
+};
+
+export type FooterColumn = {
+  heading: string;
+  links: NavLink[];
+};
+
 export type TeamMember = {
   id: string;
   name: string;

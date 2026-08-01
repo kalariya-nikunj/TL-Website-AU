@@ -1,4 +1,10 @@
-import type { Link, NavItem, NavLink, TextToken } from "@/types";
+import type {
+  FooterColumn,
+  NavItem,
+  NavLink,
+  Social,
+  TextToken,
+} from "@/types";
 
 export const site = {
   name: "Tinkerer Lab",
@@ -107,16 +113,51 @@ export const contact = {
     { label: "Saturday", value: "10:00 – 14:00" },
     { label: "Sunday", value: "Closed" },
   ],
+  /** One-line summary for the footer, where the full table is too much. */
+  hoursSummary: "Mon – Fri, 09:00 – 18:00",
 } as const;
 
-export const socials: Link[] = [
-  { label: "Instagram", url: "https://instagram.com" },
-  { label: "LinkedIn", url: "https://linkedin.com" },
-  { label: "YouTube", url: "https://youtube.com" },
+/** `label` becomes the `aria-label` — these render as bare icons. */
+export const socials: Social[] = [
+  { label: "Instagram", url: "https://instagram.com", icon: "instagram" },
+  { label: "LinkedIn", url: "https://linkedin.com", icon: "linkedin" },
+  { label: "YouTube", url: "https://youtube.com", icon: "youtube" },
+  { label: "GitHub", url: "https://github.com", icon: "github" },
 ];
 
-/** Secondary links shown in the footer only. */
+/**
+ * Small print beside the copyright line. Real routes only — add privacy and
+ * accessibility pages before linking to them.
+ */
 export const footerLinks: NavLink[] = [
   { label: "Sign in", href: "/login" },
   { label: "My registrations", href: "/my-registrations" },
+];
+
+/** Placeholder blurb for the footer's first column. */
+export const footerDescription =
+  "The Tinkerer Lab is a student workshop for making real things — laser cutting, 3D printing, CNC, electronics and hand tools, all under one roof. Come in with a sketch, leave with a prototype. No experience needed; every machine has an induction that teaches you to use it safely.";
+
+/** The footer's two link columns. */
+export const footerColumns: FooterColumn[] = [
+  {
+    heading: "Explore",
+    links: [
+      { label: "About", href: "/about" },
+      { label: "Workshops & events", href: "/workshops" },
+      { label: "Facilities", href: "/facilities" },
+      { label: "Portfolio", href: "/portfolio" },
+      { label: "Help", href: "/help" },
+    ],
+  },
+  {
+    heading: "Get involved",
+    links: [
+      { label: "Upcoming workshops", href: "/workshops" },
+      { label: "Book a machine", href: "/facilities#booking" },
+      { label: "Safety & training", href: "/facilities#safety" },
+      { label: "FAQ", href: "/help#faq" },
+      { label: "Contact us", href: "/help#contact" },
+    ],
+  },
 ];
