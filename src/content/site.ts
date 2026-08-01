@@ -1,4 +1,4 @@
-import type { Link, NavLink } from "@/types";
+import type { Link, NavItem, NavLink, TextToken } from "@/types";
 
 export const site = {
   name: "Tinkerer Lab",
@@ -10,6 +10,7 @@ export const site = {
   url: "https://tinkererlab.ahduni.edu.in",
 } as const;
 
+/** Flat list used by the footer's "Explore" column. */
 export const navLinks: NavLink[] = [
   { label: "About", href: "/about" },
   { label: "Workshops", href: "/workshops" },
@@ -17,6 +18,81 @@ export const navLinks: NavLink[] = [
   { label: "Portfolio", href: "/portfolio" },
   { label: "Help", href: "/help" },
 ];
+
+/**
+ * The header's own navigation. Kept separate from `navLinks` because the header
+ * carries Home and the submenu tree while the footer does not.
+ */
+export const headerNav: NavItem[] = [
+  { label: "Home", href: "/" },
+  {
+    label: "About",
+    href: "/about",
+    children: [
+      { label: "The lab", href: "/about" },
+      { label: "Our team", href: "/about#team" },
+      { label: "Visit us", href: "/help#visit" },
+    ],
+  },
+  {
+    label: "Workshops",
+    href: "/workshops",
+    children: [
+      { label: "Upcoming events", href: "/workshops" },
+      { label: "Past events", href: "/workshops#past" },
+      { label: "Calendar", href: "/workshops#calendar" },
+    ],
+  },
+  {
+    label: "Facilities",
+    href: "/facilities",
+    children: [
+      { label: "All equipment", href: "/facilities" },
+      { label: "Safety & training", href: "/facilities#safety" },
+      { label: "Book a machine", href: "/facilities#booking" },
+    ],
+  },
+  {
+    label: "Portfolio",
+    href: "/portfolio",
+    children: [
+      { label: "Student projects", href: "/portfolio" },
+      { label: "Lab projects", href: "/portfolio#lab" },
+    ],
+  },
+  {
+    label: "Help",
+    href: "/help",
+    children: [
+      { label: "FAQ", href: "/help#faq" },
+      { label: "Access & rules", href: "/help#access" },
+      { label: "Contact", href: "/help#contact" },
+    ],
+  },
+];
+
+/**
+ * Header colour scheme. Every value is a palette token name, mapped to a class
+ * in Header.tsx — switching `navColor` from "ink" to "primary" recolours the
+ * whole nav with no other edits.
+ */
+export const headerConfig = {
+  /** Nav link colour once the header has a solid background. */
+  navColor: "ink",
+  /** Nav link colour while transparent over a dark hero. */
+  topNavColor: "background",
+  /** Wordmark colour. Falls back to `topNavColor` while transparent. */
+  logoTextColor: "primary",
+  /** Underline and hover colour. */
+  accentColor: "accent",
+} as const satisfies Record<string, TextToken>;
+
+/** The three lines of the wordmark, top to bottom. */
+export const headerWordmark = [
+  "Tinkerer Lab",
+  "Ahmedabad",
+  "University",
+] as const;
 
 export const contact = {
   email: "tinkererlab@ahduni.edu.in",

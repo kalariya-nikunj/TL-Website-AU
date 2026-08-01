@@ -100,6 +100,12 @@
   --text-eyebrow--letter-spacing: 0.08em;
   --text-eyebrow--font-weight: 600;
 
+  /* The header's three-line wordmark — tight enough to stack beside the mark. */
+  --text-wordmark: 0.95rem;
+  --text-wordmark--line-height: 1.05;
+  --text-wordmark--letter-spacing: -0.01em;
+  --text-wordmark--font-weight: 600;
+
   /*
    * Tailwind's own size steps are re-pointed at the scale above so that the
    * generic classes and the named ones cannot drift apart.

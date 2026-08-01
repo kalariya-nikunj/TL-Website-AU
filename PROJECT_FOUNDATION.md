@@ -103,7 +103,7 @@ src/
     my-registrations/page.tsx
     globals.css
   components/
-    layout/                 Header, Footer, MobileNav, Container
+    layout/                 Header (owns its own mobile drawer), Footer, Container
     sections/               Hero, SectionHeader, CardGrid, CTA, ...
     cards/                  EventCard, FacilityCard, ProjectCard, TeamCard
     forms/                  RegistrationForm, ContactForm

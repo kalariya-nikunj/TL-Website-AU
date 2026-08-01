@@ -29,7 +29,9 @@ export function Hero({
 }: HeroProps) {
   return (
     /* The signature pairing: lime on primary-dark. */
-    <section className="dark-band py-16 md:py-24">
+    /* Extra top padding clears the fixed header, which overlays this section
+       rather than sitting above it. */
+    <section className="dark-band pt-36 pb-16 md:pt-44 md:pb-24">
       <Container className="grid items-center gap-10 lg:grid-cols-2">
         <div className="max-w-2xl">
           {eyebrow && <p className="eyebrow">{eyebrow}</p>}

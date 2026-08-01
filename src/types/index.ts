@@ -16,6 +16,25 @@ export type NavLink = {
   href: string;
 };
 
+/**
+ * A top-level header entry. Items with `children` render as a mega panel and
+ * are triggered by a <button>; items without are plain links.
+ */
+export type NavItem = NavLink & {
+  children?: NavLink[];
+};
+
+/** Palette token names the header config is allowed to reference. */
+export type TextToken =
+  | "ink"
+  | "primary"
+  | "primary-dark"
+  | "background"
+  | "surface"
+  | "muted"
+  | "accent"
+  | "accent-dark";
+
 export type Spec = {
   label: string;
   value: string;
