@@ -28,12 +28,28 @@ const Toaster = ({ ...props }: ToasterProps) => {
           <Loader2Icon className="size-4 animate-spin" />
         ),
       }}
+      // Toasts already ship an icon and text; richColors adds the coloured
+      // border and fill so state is never carried by colour alone.
+      richColors
       style={
         {
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
           "--border-radius": "var(--radius)",
+
+          "--error-bg": "var(--color-destructive-tint)",
+          "--error-border": "var(--color-destructive)",
+          "--error-text": "var(--color-destructive-dark)",
+
+          "--success-bg": "var(--color-success-tint)",
+          "--success-border": "var(--color-success)",
+          "--success-text": "var(--color-success)",
+
+          // Ink, not warning — see the note in StatusMessage.tsx.
+          "--warning-bg": "var(--color-warning-tint)",
+          "--warning-border": "var(--color-warning)",
+          "--warning-text": "var(--color-ink)",
         } as React.CSSProperties
       }
       toastOptions={{

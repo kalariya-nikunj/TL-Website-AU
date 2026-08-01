@@ -41,12 +41,25 @@
   --color-muted: #6b6062;
   --color-border: #e7e2e0;
 
-  /*
-   * NOT part of the brand brief. Carried over unchanged from the shadcn
-   * defaults so form error states keep working — needs a real decision before
-   * Phase 4 wires up validation.
-   */
-  --color-destructive: oklch(0.577 0.245 27.325);
+  /* ---- Semantic state ---------------------------------------------------
+   * These carry meaning, not decoration. The site's primary colour is already
+   * a red, so any casual use of `destructive` destroys the error signal —
+   * it is reserved exclusively for errors, invalid fields and destructive
+   * actions. `success` is deliberately a different green from the lime accent:
+   * accent means "interactive", success means "it worked". Never swap them.
+   *
+   * State is never carried by colour alone. Use <StatusMessage />, which
+   * pairs every colour with a border, an inline icon and text.
+   * --------------------------------------------------------------------- */
+  --color-destructive: #d93a2b;
+  --color-destructive-tint: #fdebe8;
+  --color-destructive-dark: #8f1d12; /* error text on light backgrounds */
+
+  --color-success: #0e7a4a;
+  --color-success-tint: #e6f4ec;
+
+  --color-warning: #b26a00;
+  --color-warning-tint: #fdf1de;
 
   /* ---- Radius: one value, applied consistently ------------------------- */
   --radius: 0.5rem;
@@ -132,6 +145,9 @@
   --color-popover-foreground: var(--color-ink);
   --color-input: var(--color-border);
   --color-ring: var(--color-accent);
+
+  /* shadcn writes `text-destructive-foreground` on solid destructive surfaces. */
+  --color-destructive-foreground: var(--color-surface);
 }
 
 /*
@@ -154,6 +170,7 @@
   --accent: var(--color-accent);
   --accent-foreground: var(--color-primary-dark);
   --destructive: var(--color-destructive);
+  --destructive-foreground: var(--color-surface);
   --border: var(--color-border);
   --input: var(--color-border);
   --ring: var(--color-accent);

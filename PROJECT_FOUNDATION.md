@@ -107,6 +107,8 @@ src/
     sections/               Hero, SectionHeader, CardGrid, CTA, ...
     cards/                  EventCard, FacilityCard, ProjectCard, TeamCard
     forms/                  RegistrationForm, ContactForm
+    feedback/               StatusMessage — the one way state is reported
+    media/                  ImagePlaceholder (swapped for next/image in Phase 5)
     ui/                     shadcn components (do not hand-edit casually)
   content/
     team.ts
@@ -242,6 +244,33 @@ Radius      --radius: 0.5rem — every rounded-* step maps to it
 Spacing     Tailwind default scale
 ```
 
+### Semantic state tokens
+
+```
+  --color-destructive        #D93A2B   errors, invalid fields, failed actions
+  --color-destructive-tint   #FDEBE8   error message backgrounds
+  --color-destructive-dark   #8F1D12   error text on light backgrounds
+  --color-success            #0E7A4A   confirmations, successful submissions
+  --color-success-tint       #E6F4EC
+  --color-warning            #B26A00   cautions, capacity limits, closing-soon
+  --color-warning-tint       #FDF1DE
+```
+
+1. `destructive` is reserved exclusively for error and destructive states. Never
+   decorative — the primary colour is already a red, so casual use of destructive red
+   destroys the signal.
+2. **State is never carried by colour alone.** Every error and success shows a coloured
+   border, an inline icon, and text. `<StatusMessage />` bundles all three (plus a
+   visually hidden label); reach for it rather than the tokens directly.
+3. `success` is a distinct green from the lime accent. Accent means "interactive",
+   success means "it worked". Never substitute one for the other.
+4. `destructive` is wired into the shadcn `destructive` variant, so Button and Badge
+   pick it up automatically; Input, Textarea and Select respond to `aria-invalid`.
+
+Contrast note: `warning` on `warning-tint` is 3.8:1, under AA for body text, and the
+palette has no `warning-dark`. Warning copy is therefore `ink`, with the state carried
+by the border and icon. `#8A5200` would work as a `warning-dark` at 5.7:1 if wanted.
+
 ### Colour usage rules
 
 1. Maroon is dominant. Lime is an accent only — roughly 10% of any screen: primary CTA
@@ -306,7 +335,9 @@ when a section component would do — that is how pages drift apart visually.
 - [x] Restyle shadcn primitives to match tokens
 - [x] Apply across all components
 - [x] Focus ring given a `primary-dark` keyline so it clears WCAG 3:1 on light surfaces
-- [ ] **Open:** pick an error/destructive colour — not covered by the brand palette
+- [x] Semantic state tokens (destructive / success / warning) wired into the primitives
+- [ ] **Open:** add a `warning-dark` if warning text needs to carry colour — `#B26A00`
+      is 3.8:1 on its tint, so warning copy is currently `ink`
 
 ### Phase 3 — Sections and polish
 - [ ] Build reference-inspired layouts section by section

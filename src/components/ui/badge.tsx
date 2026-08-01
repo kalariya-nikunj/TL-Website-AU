@@ -15,8 +15,13 @@ const badgeVariants = cva(
           "bg-primary-tint text-primary [a]:hover:bg-primary-tint/70",
         // Lime as a small graphic accent — the one badge that shouts.
         accent: "bg-accent text-primary-dark [a]:hover:bg-accent/85",
+        // --- Semantic state. Reserved for meaning, never for decoration. ---
         destructive:
-          "bg-destructive/10 text-destructive [a]:hover:bg-destructive/20",
+          "border-destructive bg-destructive-tint text-destructive-dark [a]:hover:bg-destructive [a]:hover:text-surface",
+        success: "border-success bg-success-tint text-success",
+        // `warning` on warning-tint is 3.8:1, under AA for text this size, so
+        // the copy is ink and the state rides on the border. See globals.css.
+        warning: "border-warning bg-warning-tint text-ink",
         outline:
           "border-border text-ink [a]:hover:bg-primary-tint [a]:hover:text-primary",
         ghost: "text-muted hover:bg-primary-tint hover:text-primary",

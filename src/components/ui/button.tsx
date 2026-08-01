@@ -21,8 +21,11 @@ const buttonVariants = cva(
           "bg-primary-tint text-primary hover:bg-primary-tint/70 aria-expanded:bg-primary-tint aria-expanded:text-primary",
         ghost:
           "text-ink hover:bg-primary-tint hover:text-primary aria-expanded:bg-primary-tint aria-expanded:text-primary",
+        // Errors and destructive actions only — never decorative. The border
+        // carries the state alongside the fill so it does not read as colour
+        // alone, and hover commits to the solid red.
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20",
+          "border-destructive bg-destructive-tint text-destructive-dark hover:bg-destructive hover:text-surface",
         link: "text-primary underline-offset-4 hover:underline hover:decoration-accent-dark hover:decoration-2",
       },
       size: {
