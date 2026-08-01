@@ -29,7 +29,7 @@ const POSTER_SRC = "/images/hero-poster.jpg";
  * Mobile bandwidth guard. The poster carries the effect below `md` and the
  * video is never fetched. Flip to `true` once hero.mp4 is confirmed under ~2MB.
  */
-const PLAY_VIDEO_ON_MOBILE = false;
+const PLAY_VIDEO_ON_MOBILE = true;
 
 /** Matches Tailwind's `md`. */
 const DESKTOP_QUERY = "(min-width: 48rem)";
@@ -231,10 +231,10 @@ export function VideoHero() {
     >
       <div
         ref={stageRef}
-        className="sticky top-0 h-[100dvh] overflow-hidden bg-background [--pad:1rem] [--vs0:0.7] md:[--pad:1.5rem] md:[--vs0:0.45]"
+        className="sticky top-0 h-[100dvh] overflow-hidden bg-background [--pad:1rem] [--vs0:0.7] md:[--pad:1.5rem] md:[--vs0:0.32]"
         style={{ "--p": 0 } as React.CSSProperties}
       >
-        <Container className="relative h-full pt-28 md:pt-36">
+        <Container className="relative h-full pt-28">
           {/* Always real text in the DOM — never injected on scroll. */}
           <h1
             ref={headlineRef}
@@ -252,21 +252,31 @@ export function VideoHero() {
               sits under the headline instead. */}
           <div
             style={PARAGRAPH_STYLE}
-            className="relative z-30 mt-10 max-w-[34ch] md:absolute md:top-36 md:right-6 md:mt-0 lg:right-8"
+            className="relative z-30 mt-10 max-w-[34ch] md:absolute md:top-28 md:right-6 md:mt-0 lg:right-8"
           >
             <div aria-hidden="true" className="h-1 w-16 bg-accent" />
             <p className="mt-4 text-body text-muted">{PARAGRAPH}</p>
           </div>
         </Container>
 
-        {/* Laid out full-bleed and scaled down — growing it never reflows.
-            Sits above the headline so it covers the lower lines on the way up. */}
-        <div
-          ref={panelRef}
-          style={PANEL_STYLE}
-          className="absolute inset-0 z-20 overflow-hidden"
-        >
-          {media}
+        {/* Positioning frame — no transform, so the breakpoint switch costs
+            nothing at scroll time.
+
+            At md+ it is the whole viewport, which is landscape, so a 16:9 file
+            fills it with only a sliver cropped. A phone viewport is portrait:
+            covering it would throw away roughly 70% of a landscape frame's
+            width. So below md the frame keeps the footage's own 16:9 and the
+            sequence grows it to full width instead of full screen. */}
+        <div className="absolute inset-x-0 bottom-[14dvh] z-20 md:inset-0 md:bottom-0">
+          {/* Laid out at its final size and scaled down — growing it never
+              reflows. Sits above the headline so it covers the lower lines. */}
+          <div
+            ref={panelRef}
+            style={PANEL_STYLE}
+            className="relative aspect-video w-full overflow-hidden md:h-full md:aspect-auto"
+          >
+            {media}
+          </div>
         </div>
       </div>
     </section>

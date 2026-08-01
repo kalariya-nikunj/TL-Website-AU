@@ -58,3 +58,21 @@ the markup at all, so there is no request to cancel.
 
 Once the encode is confirmed under ~2 MB, flip that constant to `true` to let
 phones have the video too. Leave it `false` if the file comes in heavier.
+
+### Framing: one landscape file is enough
+
+A phone viewport is portrait. Covering it with a 16:9 frame would crop away
+roughly 70% of the width and leave the subject out of shot, so below `md` the
+panel keeps the footage's own 16:9 and the sequence grows it to **full width**
+rather than full screen. Nothing is ever cropped, and one landscape encode
+serves every breakpoint.
+
+Consequence: on phones the end state is a full-width 16:9 band sitting above
+the fold's lower third, not an edge-to-edge fill. That is the trade for not
+cropping. If a full-bleed phone hero matters more than the crop, supply a
+portrait cut as a second file and give the panel a `md:` aspect switch —
+but that is two encodes to keep in sync.
+
+**Shoot with the centre safe** regardless: the desktop panel covers a viewport
+that is wider than 16:9 on most laptops, so a sliver of top and bottom is
+trimmed there.
