@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
-import { ImagePlaceholder } from "@/components/media/ImagePlaceholder";
+import { ImageGallery } from "@/components/media/ImageGallery";
 import { PageHeader } from "@/components/sections/PageHeader";
 import { Section } from "@/components/sections/Section";
 import { getProject, projectSlugs } from "@/content/projects";
@@ -52,9 +52,16 @@ export default async function ProjectPage({ params }: PageProps) {
       <Section>
         <div className="grid gap-10 lg:grid-cols-[2fr_1fr]">
           <div>
-            <ImagePlaceholder
-              label={project.title}
-              className="w-full rounded-lg"
+            <ImageGallery
+              size="full"
+              priority
+              images={project.images.map((src, index) => ({
+                src,
+                alt:
+                  index === 0
+                    ? `${project.title}, built in the Tinkerer Lab`
+                    : `${project.title}, view ${index + 1}`,
+              }))}
             />
             <div className="mt-8 max-w-2xl text-muted">
               <p>{project.description}</p>

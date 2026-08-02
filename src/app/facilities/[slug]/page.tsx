@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { CTASection } from "@/components/sections/CTASection";
-import { ImagePlaceholder } from "@/components/media/ImagePlaceholder";
+import { ImageGallery } from "@/components/media/ImageGallery";
 import { PageHeader } from "@/components/sections/PageHeader";
 import { Section } from "@/components/sections/Section";
 import { SectionHeader } from "@/components/sections/SectionHeader";
@@ -50,9 +50,16 @@ export default async function FacilityPage({ params }: PageProps) {
       <Section>
         <div className="grid gap-10 lg:grid-cols-[2fr_1fr]">
           <div>
-            <ImagePlaceholder
-              label={facility.name}
-              className="w-full rounded-lg"
+            <ImageGallery
+              size="full"
+              priority
+              images={facility.images.map((src, index) => ({
+                src,
+                alt:
+                  index === 0
+                    ? `${facility.name} in the Tinkerer Lab`
+                    : `${facility.name}, view ${index + 1}`,
+              }))}
             />
             <div className="mt-8 max-w-2xl text-muted">
               <p>{facility.description}</p>

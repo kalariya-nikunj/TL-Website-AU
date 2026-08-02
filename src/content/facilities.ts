@@ -21,7 +21,11 @@ export const facilities: Facility[] = [
       "The machine is never left running unattended.",
       "Extraction must be on before a job starts.",
     ],
-    images: ["/images/facilities/laser-cutter.jpg"],
+    images: [
+      "/images/facilities/laser-cutter.jpg",
+      "/images/facilities/laser-cutter-2.jpg",
+      "/images/facilities/laser-cutter-3.jpg",
+    ],
     requiresTraining: true,
   },
   {
@@ -42,7 +46,11 @@ export const facilities: Facility[] = [
       "Resin is handled with gloves and only inside the fume enclosure.",
       "Do not open a printer mid-job.",
     ],
-    images: ["/images/facilities/3d-printing.jpg"],
+    images: [
+      "/images/facilities/3d-printing.jpg",
+      "/images/facilities/3d-printing-2.jpg",
+      "/images/facilities/3d-printing-3.jpg",
+    ],
     requiresTraining: false,
   },
   {
@@ -63,7 +71,11 @@ export const facilities: Facility[] = [
       "Eye and ear protection required inside the bay.",
       "Workholding is checked by staff before every run.",
     ],
-    images: ["/images/facilities/cnc-router.jpg"],
+    images: [
+      "/images/facilities/cnc-router.jpg",
+      "/images/facilities/cnc-router-2.jpg",
+      "/images/facilities/cnc-router-3.jpg",
+    ],
     requiresTraining: true,
   },
   {
@@ -81,7 +93,11 @@ export const facilities: Facility[] = [
       { label: "Rework", value: "Hot air + microscope" },
     ],
     safetyNotes: ["Fume extraction on while soldering."],
-    images: ["/images/facilities/electronics-bench.jpg"],
+    images: [
+      "/images/facilities/electronics-bench.jpg",
+      "/images/facilities/electronics-bench-2.jpg",
+      "/images/facilities/electronics-bench-3.jpg",
+    ],
     requiresTraining: false,
   },
   {
@@ -102,7 +118,11 @@ export const facilities: Facility[] = [
       "No loose clothing, no gloves near rotating blades.",
       "A staff member must be present in the shop.",
     ],
-    images: ["/images/facilities/woodworking-shop.jpg"],
+    images: [
+      "/images/facilities/woodworking-shop.jpg",
+      "/images/facilities/woodworking-shop-2.jpg",
+      "/images/facilities/woodworking-shop-3.jpg",
+    ],
     requiresTraining: true,
   },
 ];

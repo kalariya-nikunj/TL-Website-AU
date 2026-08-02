@@ -7,6 +7,7 @@ import { ChevronDownIcon, ShieldAlertIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/layout/Container";
+import { ImageGallery } from "@/components/media/ImageGallery";
 import type { Facility } from "@/types";
 
 /**
@@ -130,15 +131,16 @@ export function FacilityExplorer({ facilities }: FacilityExplorerProps) {
                     inert={!open}
                     className="grid gap-8 pt-2 pb-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]"
                   >
-                    <div className="card-chamfer relative aspect-4/3 w-full overflow-hidden bg-primary-tint">
-                      <Image
-                        src={image}
-                        alt={`${facility.name} in the Tinkerer Lab`}
-                        fill
-                        sizes="(min-width: 48rem) 40vw, 90vw"
-                        className="object-cover"
-                      />
-                    </div>
+                    <ImageGallery
+                      size="compact"
+                      images={facility.images.map((src, index) => ({
+                        src,
+                        alt:
+                          index === 0
+                            ? `${facility.name} in the Tinkerer Lab`
+                            : `${facility.name}, view ${index + 1}`,
+                      }))}
+                    />
 
                     <div className="flex flex-col gap-6">
                       <p className="max-w-prose text-body text-muted">

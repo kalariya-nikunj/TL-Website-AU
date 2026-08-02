@@ -12,7 +12,11 @@ export const projects: Project[] = [
       "A four-wheeled rover that navigates the campus loop without a driver.",
     description:
       "Placeholder description. Built over two semesters: chassis machined on the CNC router, drive electronics assembled at the electronics bench, and perception running on an on-board single-board computer.",
-    images: ["/images/projects/autonomous-rover.jpg"],
+    images: [
+      "/images/projects/autonomous-rover.jpg",
+      "/images/projects/autonomous-rover-2.jpg",
+      "/images/projects/autonomous-rover-3.jpg",
+    ],
     featured: true,
   },
   {
@@ -25,7 +29,11 @@ export const projects: Project[] = [
       "A solar-powered buoy that logs turbidity, pH, and temperature.",
     description:
       "Placeholder description. Designed for a local lake survey. Enclosure laser-cut and sealed in the lab; data pushed over a low-power radio link.",
-    images: ["/images/projects/solar-water-monitor.jpg"],
+    images: [
+      "/images/projects/solar-water-monitor.jpg",
+      "/images/projects/solar-water-monitor-2.jpg",
+      "/images/projects/solar-water-monitor-3.jpg",
+    ],
     featured: true,
   },
   {
@@ -38,7 +46,11 @@ export const projects: Project[] = [
       "A fully 3D-printed, tendon-driven hand built for under ₹5,000.",
     description:
       "Placeholder description. Iterated across eleven printed revisions in the 3D printing bay, with grip testing against a standard object set.",
-    images: ["/images/projects/prosthetic-hand.jpg"],
+    images: [
+      "/images/projects/prosthetic-hand.jpg",
+      "/images/projects/prosthetic-hand-2.jpg",
+      "/images/projects/prosthetic-hand-3.jpg",
+    ],
     featured: true,
   },
   {
@@ -51,7 +63,11 @@ export const projects: Project[] = [
       "A flat-pack desk system cut from a single sheet of plywood.",
     description:
       "Placeholder description. Joinery designed for tool-free assembly and cut in one pass on the CNC router.",
-    images: ["/images/projects/modular-furniture.jpg"],
+    images: [
+      "/images/projects/modular-furniture.jpg",
+      "/images/projects/modular-furniture-2.jpg",
+      "/images/projects/modular-furniture-3.jpg",
+    ],
     featured: false,
   },
   {
@@ -64,7 +80,11 @@ export const projects: Project[] = [
       "A student-built payload that reached 28 km and returned intact.",
     description:
       "Placeholder description. Foam payload shell, custom telemetry board, and a recovery plan built around a GSM and radio beacon pair.",
-    images: ["/images/projects/weather-balloon.jpg"],
+    images: [
+      "/images/projects/weather-balloon.jpg",
+      "/images/projects/weather-balloon-2.jpg",
+      "/images/projects/weather-balloon-3.jpg",
+    ],
     featured: false,
   },
 ];
