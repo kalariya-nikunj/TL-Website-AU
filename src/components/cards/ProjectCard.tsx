@@ -1,47 +1,31 @@
-import Link from "next/link";
-
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ImagePlaceholder } from "@/components/media/ImagePlaceholder";
+import { CardBase } from "@/components/cards/CardBase";
 import type { Project } from "@/types";
 
 type ProjectCardProps = {
   project: Project;
+  priority?: boolean;
 };
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, priority }: ProjectCardProps) {
   return (
     <li>
-      <Card className="h-full">
-        <ImagePlaceholder label={project.title} />
-
-        <CardHeader>
-          <CardTitle>
-            <Link href={`/portfolio/${project.slug}`} className="transition-colors hover:text-primary">{project.title}</Link>
-          </CardTitle>
-          <CardDescription>
-            {project.year} · {project.team.length}{" "}
-            {project.team.length === 1 ? "student" : "students"}
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="flex flex-col gap-3">
-          <p className="text-muted">{project.shortDescription}</p>
-          <div className="flex flex-wrap gap-2">
-            {project.tags.map((tag) => (
-              <Badge key={tag} variant="outline">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <CardBase
+        href={`/portfolio/${project.slug}`}
+        image={project.images[0]}
+        imageAlt={`${project.title}, built in the Tinkerer Lab`}
+        badge={String(project.year)}
+        title={project.title}
+        meta={project.team.join(", ")}
+        priority={priority}
+        specs={project.tags.slice(0, 3).map((tag) => (
+          <span
+            key={tag}
+            className="rounded-lg border border-background/40 px-2 py-0.5"
+          >
+            {tag}
+          </span>
+        ))}
+      />
     </li>
   );
 }

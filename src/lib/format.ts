@@ -21,6 +21,18 @@ export function formatTime(iso: string): string {
 }
 
 /**
+ * "14 Aug" — the card badge, which uppercases it in CSS. Short enough to sit in
+ * a pill without wrapping at any card width.
+ */
+export function formatCardDate(iso: string): string {
+  return new Intl.DateTimeFormat(LOCALE, {
+    day: "numeric",
+    month: "short",
+    timeZone: TIME_ZONE,
+  }).format(new Date(iso));
+}
+
+/**
  * "14 August 2026, 10:00 am – 12:30 pm" for a same-day event,
  * "5 September 2026 – 6 September 2026" when it spans days.
  */

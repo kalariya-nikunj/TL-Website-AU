@@ -107,6 +107,26 @@
   --text-eyebrow--font-weight: 600;
 
   /*
+   * Card titles. `-lg` is the step up the rail's active card takes; keeping
+   * both here means the two sizes cannot drift apart.
+   */
+  --text-card-title: 1.375rem;
+  --text-card-title--line-height: 1.2;
+  --text-card-title--letter-spacing: -0.01em;
+  --text-card-title--font-weight: 700;
+
+  --text-card-title-lg: 1.625rem;
+  --text-card-title-lg--line-height: 1.15;
+  --text-card-title-lg--letter-spacing: -0.01em;
+  --text-card-title-lg--font-weight: 700;
+
+  /* The card badge pill — a touch smaller than an eyebrow. */
+  --text-badge: 0.7rem;
+  --text-badge--line-height: 1.2;
+  --text-badge--letter-spacing: 0.08em;
+  --text-badge--font-weight: 600;
+
+  /*
    * Interior page titles. Smaller than the homepage hero, larger than an h1 —
    * these sit beside a full-height image panel and have to hold that weight.
    */
@@ -176,6 +196,23 @@
  * through var() rather than through a utility class (sonner.tsx, for one).
  * These are aliases, not definitions.
  */
+/*
+ * Card sizing. These three values control every card on the site: the rail's
+ * fixed card width at each breakpoint, and the grid's minimum column.
+ *
+ * They live in `:root` rather than `@theme` because Tailwind only emits theme
+ * variables it can see used in a class, and these are consumed from inside the
+ * `.card-rail-list` / `.card-grid` rules further down — which it does not scan.
+ *
+ * Deliberately wider than a conventional card. Do not shrink them to fit more
+ * on screen; the rail is meant to show a partial card at the right edge.
+ */
+:root {
+  --card-w: 22rem;
+  --card-w-sm: 17rem;
+  --card-grid-min: 20rem;
+}
+
 :root {
   --background: var(--color-background);
   --foreground: var(--color-ink);
@@ -344,8 +381,111 @@
   }
 }
 
+/*
+ * The card's own machined note: a 16px chamfer off the top-right corner and
+ * nothing else. The PageHero cut is the statement; this is the echo.
+ */
+@utility card-chamfer {
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+}
+
+/* The badge pill — type role, colour and shape travel together. */
+@utility card-badge {
+  font-family: var(--font-display);
+  font-size: var(--text-badge);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary-dark);
+  background-color: var(--color-background);
+  border-radius: var(--radius);
+}
+
 /* ==========================================================================
-   6. MOTION
+   6. CARD LAYOUTS
+   Plain CSS rather than `@utility` because these need media queries and child
+   selectors — the rail styles cards it does not render, so the levers have to
+   reach through the list.
+   ========================================================================== */
+
+/*
+ * The rail's left padding lines its first card up with the site container, and
+ * its right edge runs off screen so a partial card is always visible. Above
+ * `lg` the container is centred, so the gutter has to grow with the viewport:
+ * `(100% - 72rem) / 2` is the container's own left offset, `max()` collapses it
+ * to the plain gutter once the viewport is narrower than the container.
+ *
+ * `scroll-padding` matches, or snapping would park cards under the gutter.
+ */
+.card-rail {
+  --rail-gutter: 1rem;
+
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline-start: var(--rail-gutter);
+  padding-inline: var(--rail-gutter);
+}
+
+@media (width >= 40rem) {
+  .card-rail {
+    --rail-gutter: 1.5rem;
+  }
+}
+
+@media (width >= 64rem) {
+  .card-rail {
+    --rail-gutter: max(2rem, calc((100% - 72rem) / 2 + 2rem));
+  }
+}
+
+.card-rail-list > li {
+  position: relative;
+  flex: none;
+  width: var(--card-w-sm);
+  scroll-snap-align: start;
+  /* Bottom left, so the active card grows up and right into the rail rather
+     than pushing back against the gutter it is aligned to. */
+  transform-origin: bottom left;
+  transition: scale 350ms ease-out;
+}
+
+@media (width >= 48rem) {
+  .card-rail-list > li {
+    width: var(--card-w);
+  }
+}
+
+/*
+ * `data-active` is set imperatively by CardRail — it observes cards it did not
+ * render, so an attribute on the DOM node is the only handle it has.
+ *
+ * Under reduced motion the observer never runs, so nothing is ever marked
+ * active and neither of these rules can fire.
+ */
+.card-rail-list > li[data-active="true"] {
+  z-index: 1;
+  scale: 1.06;
+}
+
+.card-rail-list > li[data-active="true"] [data-card-title] {
+  font-size: var(--text-card-title-lg);
+  line-height: var(--text-card-title-lg--line-height);
+}
+
+/*
+ * `min()` guards the minimum track: below a 20rem-wide content column a bare
+ * minmax(20rem, 1fr) would overflow the page instead of collapsing.
+ */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(var(--card-grid-min), 100%), 1fr)
+  );
+}
+
+/* ==========================================================================
+   7. MOTION
    ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {

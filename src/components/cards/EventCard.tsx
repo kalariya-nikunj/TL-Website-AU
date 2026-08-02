@@ -1,49 +1,58 @@
-import Link from "next/link";
+import { ClockIcon, MapPinIcon } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ImagePlaceholder } from "@/components/media/ImagePlaceholder";
-import { formatEventRange } from "@/lib/format";
+import { CardBase } from "@/components/cards/CardBase";
+import { formatCardDate, formatTime } from "@/lib/format";
 import type { LabEvent } from "@/types";
 
 type EventCardProps = {
   event: LabEvent;
+  priority?: boolean;
 };
 
-export function EventCard({ event }: EventCardProps) {
+/** Events without artwork fall back to the lab's own photo. */
+const FALLBACK_IMAGE = "/images/hero/workshops-a.jpg";
+
+export function EventCard({ event, priority }: EventCardProps) {
   return (
     <li>
-      <Card className="h-full">
-        <ImagePlaceholder label={event.title} />
+      <CardBase
+        href={`/workshops/${event.slug}`}
+        image={event.image ?? FALLBACK_IMAGE}
+        imageAlt={`${event.title} at the Tinkerer Lab`}
+        badge={formatCardDate(event.startsAt)}
+        title={event.title}
+        priority={priority}
+        meta={
+          <span className="inline-flex items-center gap-1.5">
+            <MapPinIcon className="size-3.5 shrink-0" aria-hidden="true" />
+            {event.location}
+          </span>
+        }
+        specs={
+          <>
+            <span className="inline-flex items-center gap-1.5">
+              <ClockIcon className="size-3.5" aria-hidden="true" />
+              {formatTime(event.startsAt)}
+            </span>
 
-        <CardHeader>
-          <CardTitle>
-            <Link href={`/workshops/${event.slug}`} className="transition-colors hover:text-primary">{event.title}</Link>
-          </CardTitle>
-          <CardDescription>
-            {formatEventRange(event.startsAt, event.endsAt)}
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="flex flex-col gap-3">
-          <p className="text-muted">{event.shortDescription}</p>
-          <p className="text-sm text-muted">{event.location}</p>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant={event.registrationOpen ? "default" : "secondary"}>
-              {event.registrationOpen ? "Registration open" : "Drop in"}
-            </Badge>
-            {typeof event.capacity === "number" && (
-              <Badge variant="outline">{event.capacity} places</Badge>
+            {/*
+              The dot is decorative — the words carry the state, so the status
+              never depends on seeing a colour.
+            */}
+            {event.registrationOpen ? (
+              <span className="inline-flex items-center gap-1.5 text-accent">
+                <span
+                  aria-hidden="true"
+                  className="size-1.5 rounded-full bg-accent"
+                />
+                Registration open
+              </span>
+            ) : (
+              <span className="text-background/60">Registration closed</span>
             )}
-          </div>
-        </CardContent>
-      </Card>
+          </>
+        }
+      />
     </li>
   );
 }

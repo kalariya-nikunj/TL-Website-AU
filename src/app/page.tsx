@@ -4,6 +4,7 @@ import { ProjectCard } from "@/components/cards/ProjectCard";
 import { TeamCard } from "@/components/cards/TeamCard";
 import { CTASection } from "@/components/sections/CTASection";
 import { CardGrid } from "@/components/sections/CardGrid";
+import { CardRail } from "@/components/sections/CardRail";
 import { VideoHero } from "@/components/sections/VideoHero";
 import { NewsStrip } from "@/components/sections/NewsStrip";
 import { Section } from "@/components/sections/Section";
@@ -11,20 +12,19 @@ import { SectionHeader } from "@/components/sections/SectionHeader";
 import { facilities } from "@/content/facilities";
 import { getUpcomingEvents } from "@/content/events";
 import { news } from "@/content/news";
-import { featuredProjects } from "@/content/projects";
+import { projects } from "@/content/projects";
 import { site } from "@/content/site";
 import { team } from "@/content/team";
 
 /**
- * The "next 3 events" list is filtered against the current time, so the page is
+ * The upcoming list is filtered against the current time, so the page is
  * revalidated hourly rather than frozen at build time.
  */
 export const revalidate = 3600;
 
 export default function HomePage() {
-  const upcoming = getUpcomingEvents(3);
-  const previewFacilities = facilities.slice(0, 3);
-  const previewProjects = featuredProjects.slice(0, 3);
+  /* The rails scroll, so they carry more than a three-card preview would. */
+  const upcoming = getUpcomingEvents(8);
   const previewTeam = team.slice(0, 4);
 
   return (
@@ -61,55 +61,62 @@ export default function HomePage() {
       </Section>
 
       {/* 5. Workshops preview */}
-      <Section ariaLabelledBy="home-workshops">
-        <SectionHeader
+      {upcoming.length > 0 ? (
+        <CardRail
           id="home-workshops"
           title="Next up"
           description="Inductions, workshops, and open days. Most need a free place booked in advance."
-          action={{ label: "All workshops", href: "/workshops" }}
-        />
-        {upcoming.length > 0 ? (
-          <CardGrid className="mt-8">
-            {upcoming.map((event) => (
-              <EventCard key={event.slug} event={event} />
-            ))}
-          </CardGrid>
-        ) : (
+          action={{ label: "Discover all", href: "/workshops" }}
+          ariaLabel="Upcoming workshops and events"
+        >
+          {upcoming.map((event, index) => (
+            /* The only priority image below the hero — one preload, on the
+               first card a visitor reaches. */
+            <EventCard
+              key={event.slug}
+              event={event}
+              priority={index === 0}
+            />
+          ))}
+        </CardRail>
+      ) : (
+        <Section ariaLabelledBy="home-workshops">
+          <SectionHeader
+            id="home-workshops"
+            title="Next up"
+            action={{ label: "Discover all", href: "/workshops" }}
+          />
           <p className="mt-8 text-muted">
             Nothing scheduled right now. Check back at the start of term.
           </p>
-        )}
-      </Section>
+        </Section>
+      )}
 
       {/* 6. Facilities preview */}
-      <Section ariaLabelledBy="home-facilities">
-        <SectionHeader
-          id="home-facilities"
-          title="What you can use"
-          description="Fabrication, electronics, and workshop equipment — some open access, some after an induction."
-          action={{ label: "All facilities", href: "/facilities" }}
-        />
-        <CardGrid className="mt-8">
-          {previewFacilities.map((facility) => (
-            <FacilityCard key={facility.slug} facility={facility} />
-          ))}
-        </CardGrid>
-      </Section>
+      <CardRail
+        id="home-facilities"
+        title="What you can use"
+        description="Fabrication, electronics, and workshop equipment — some open access, some after an induction."
+        action={{ label: "Discover all", href: "/facilities" }}
+        ariaLabel="Lab facilities"
+      >
+        {facilities.map((facility) => (
+          <FacilityCard key={facility.slug} facility={facility} />
+        ))}
+      </CardRail>
 
       {/* 7. Portfolio preview */}
-      <Section ariaLabelledBy="home-portfolio">
-        <SectionHeader
-          id="home-portfolio"
-          title="Built here"
-          description="A sample of what students have made in the lab."
-          action={{ label: "Full portfolio", href: "/portfolio" }}
-        />
-        <CardGrid className="mt-8">
-          {previewProjects.map((project) => (
-            <ProjectCard key={project.slug} project={project} />
-          ))}
-        </CardGrid>
-      </Section>
+      <CardRail
+        id="home-portfolio"
+        title="Built here"
+        description="A sample of what students have made in the lab."
+        action={{ label: "Discover all", href: "/portfolio" }}
+        ariaLabel="Student and lab projects"
+      >
+        {projects.map((project) => (
+          <ProjectCard key={project.slug} project={project} />
+        ))}
+      </CardRail>
 
       {/* 8. Help / contact CTA */}
       <CTASection
