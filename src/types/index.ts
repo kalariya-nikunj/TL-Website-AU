@@ -70,6 +70,8 @@ export type TeamMember = {
   links?: Link[];
 };
 
+export type FacilityStatus = "available" | "maintenance" | "retired";
+
 export type Facility = {
   slug: string;
   name: string;
@@ -80,11 +82,39 @@ export type Facility = {
   safetyNotes?: string[];
   images: string[];
   requiresTraining: boolean;
+
+  /*
+   * Everything below is optional so the placeholder catalogue keeps type
+   * checking. The detail page renders nothing at all for a field that is
+   * absent — never an empty heading.
+   */
+
+  /** Short list of what the machine is good for. */
+  makes?: string[];
+  /** Materials it is rated for. */
+  materials?: string[];
+  /** Materials it must never touch. Safety information, not a preference. */
+  notSupported?: string[];
+  softwareRequired?: string[];
+  fileFormats?: string[];
+  /** "Same day for jobs under 30 minutes" */
+  leadTime?: string;
+  cost?: string;
+  /** "45-minute induction" */
+  trainingLength?: string;
+  /** A `TeamMember.id`. Unresolvable ids are skipped, not thrown on. */
+  supervisor?: string;
+  /** "Ground floor, Bay 2" */
+  location?: string;
+  status?: FacilityStatus;
 };
+
+export type ProjectStatus = "completed" | "in-progress";
 
 export type Project = {
   slug: string;
   title: string;
+  /** Display names. `teamMembers` is the resolvable version. */
   team: string[];
   year: number;
   tags: string[];
@@ -92,7 +122,25 @@ export type Project = {
   description: string;
   images: string[];
   featured: boolean;
+
+  /* Optional, as above. */
+
+  /** `TeamMember.id`s — rendered as credit blocks with their links. */
+  teamMembers?: string[];
+  /** Contributors who are not in the team content. Plain names. */
+  externalTeam?: string[];
+  /** `Facility.slug`s. Drives "how it was made" and the reverse lookup. */
+  facilitiesUsed?: string[];
+  materials?: string[];
+  /** "Two semesters" */
+  duration?: string;
+  status?: ProjectStatus;
+  /** GitHub, a demo, a paper. */
+  links?: Link[];
+  award?: string;
 };
+
+export type EventLevel = "beginner" | "intermediate" | "advanced";
 
 export type LabEvent = {
   slug: string;
@@ -107,6 +155,23 @@ export type LabEvent = {
   capacity?: number;
   registrationOpen: boolean;
   image?: string;
+
+  /* Optional, as above. */
+
+  /** A `TeamMember.id`. */
+  instructor?: string;
+  level?: EventLevel;
+  /** Empty or absent means "no prior experience needed". */
+  prerequisites?: string[];
+  whatYouWillLearn?: string[];
+  whatToBring?: string[];
+  /** `Facility.slug`s. */
+  facilitiesUsed?: string[];
+  /** Paired with `capacity` to show how full the session is. */
+  seatsRemaining?: number;
+  materialsFee?: string;
+  /** True when passing this session unlocks a machine. */
+  isInduction?: boolean;
 };
 
 export type FaqItem = {

@@ -20,6 +20,24 @@ export const events: LabEvent[] = [
     capacity: 12,
     registrationOpen: true,
     image: "/images/events/laser-cutter-induction.jpg",
+    instructor: "fabrication-lead",
+    level: "beginner",
+    isInduction: true,
+    seatsRemaining: 4,
+    materialsFee: "Free — scrap acrylic provided",
+    prerequisites: [],
+    whatYouWillLearn: [
+      "Which materials are safe and which will get you banned",
+      "Preparing a cut file that the machine will actually accept",
+      "Setting focus, power and speed for a given thickness",
+      "Starting extraction and responding to a fire",
+    ],
+    whatToBring: [
+      "A laptop with LightBurn or Inkscape installed",
+      "A simple flat design if you have one",
+      "Closed shoes",
+    ],
+    facilitiesUsed: ["laser-cutter"],
   },
   {
     slug: "intro-to-3d-printing",
@@ -34,6 +52,19 @@ export const events: LabEvent[] = [
     capacity: 20,
     registrationOpen: true,
     image: "/images/events/intro-to-3d-printing.jpg",
+    instructor: "lab-manager",
+    level: "beginner",
+    isInduction: true,
+    seatsRemaining: 11,
+    materialsFee: "Free — first 200 g of PLA included",
+    prerequisites: [],
+    whatYouWillLearn: [
+      "Designing for FDM: overhangs, tolerances and wall thickness",
+      "Slicing, supports and orientation",
+      "Reading a failed print and fixing the cause",
+    ],
+    whatToBring: ["A laptop", "A part you want to print, if you have one"],
+    facilitiesUsed: ["3d-printing"],
   },
   {
     slug: "pcb-design-sprint",
@@ -46,8 +77,25 @@ export const events: LabEvent[] = [
     description:
       "Placeholder description. Schematic capture, footprint selection, layout and routing, design rule checks, and submitting a board for fabrication.",
     capacity: 16,
-    registrationOpen: true,
+    /* Full — `seatsRemaining: 0` and an open registration would contradict
+       each other on the detail page. */
+    registrationOpen: false,
     image: "/images/events/pcb-design-sprint.jpg",
+    instructor: "electronics-lead",
+    level: "intermediate",
+    seatsRemaining: 0,
+    materialsFee: "₹250 covers the board fabrication",
+    prerequisites: [
+      "You can read a basic schematic",
+      "You have soldered through-hole components before",
+    ],
+    whatYouWillLearn: [
+      "Schematic capture and part selection",
+      "Board layout, ground planes and routing",
+      "Sending a design to a fab house",
+    ],
+    whatToBring: ["A laptop with KiCad installed"],
+    facilitiesUsed: ["electronics-bench"],
   },
   {
     slug: "makers-open-day",
