@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 
-import { TeamCard } from "@/components/cards/TeamCard";
 import { CTASection } from "@/components/sections/CTASection";
-import { CardGrid } from "@/components/sections/CardGrid";
 import { PageHero } from "@/components/sections/PageHero";
 import { Section } from "@/components/sections/Section";
 import { SectionHeader } from "@/components/sections/SectionHeader";
+import { TeamRail } from "@/components/sections/TeamRail";
 import { site } from "@/content/site";
 import { team } from "@/content/team";
 
@@ -42,18 +41,14 @@ export default function AboutPage() {
         </div>
       </Section>
 
-      <Section ariaLabelledBy="team">
-        <SectionHeader
-          id="team"
-          title="The team"
-          description="Placeholder copy. Staff and student coordinators who run inductions, supervise the shop floor, and maintain the equipment."
-        />
-        <CardGrid columns={3} className="mt-8">
-          {team.map((member) => (
-            <TeamCard key={member.id} member={member} />
-          ))}
-        </CardGrid>
-      </Section>
+      {/* `id="team"` is the target of /about#team from the header and footer —
+          it has to stay on the heading. */}
+      <TeamRail
+        id="team"
+        title="The team"
+        description="Placeholder copy. Staff and student coordinators who run inductions, supervise the shop floor, and maintain the equipment."
+        members={team}
+      />
 
       <CTASection
         title="Want to work in the lab?"

@@ -16,6 +16,10 @@ export const team: TeamMember[] = [
     role: "Lab Manager",
     photo: "/images/team/placeholder-2.jpg",
     bio: "Placeholder bio. Runs day-to-day operations, inductions, and machine maintenance.",
+    links: [
+      { label: "LinkedIn", url: "https://linkedin.com" },
+      { label: "Email", url: "mailto:tinkererlab@ahduni.edu.in" },
+    ],
   },
   {
     id: "fabrication-lead",
@@ -23,6 +27,7 @@ export const team: TeamMember[] = [
     role: "Fabrication Lead",
     photo: "/images/team/placeholder-3.jpg",
     bio: "Placeholder bio. Owns the CNC, laser, and woodworking bays.",
+    links: [{ label: "Email", url: "mailto:tinkererlab@ahduni.edu.in" }],
   },
   {
     id: "electronics-lead",
@@ -37,6 +42,10 @@ export const team: TeamMember[] = [
     role: "Student Coordinator",
     photo: "/images/team/placeholder-5.jpg",
     bio: "Placeholder bio. First point of contact for student projects and bookings.",
+    links: [
+      { label: "Instagram", url: "https://instagram.com" },
+      { label: "Email", url: "mailto:tinkererlab@ahduni.edu.in" },
+    ],
   },
 ];
 
