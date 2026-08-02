@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import { LinkIcon, MailIcon } from "lucide-react";
 
@@ -59,7 +61,7 @@ export function TeamCard({ member }: TeamCardProps) {
   const links = member.links ?? [];
 
   return (
-    <div className="card-chamfer relative aspect-3/4 w-full overflow-hidden bg-primary-tint">
+    <div className="team-card-shape relative aspect-3/4 w-full overflow-hidden bg-primary-tint">
       <Image
         src={member.photo}
         alt={member.name}
@@ -100,6 +102,9 @@ export function TeamCard({ member }: TeamCardProps) {
                   <a
                     href={link.url}
                     aria-label={name(member.name)}
+                    /* The rail toggles pause on any click that reaches it.
+                       Following a link is not a request to pause. */
+                    onClick={(event) => event.stopPropagation()}
                     {...(external
                       ? { target: "_blank", rel: "noopener noreferrer" }
                       : {})}

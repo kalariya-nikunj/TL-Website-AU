@@ -223,6 +223,13 @@
   --team-card-w-sm: 12rem;
 
   /*
+   * Larger than the site `--radius`, and on all four corners rather than the
+   * content cards' single chamfer: these are portraits, and a cut corner reads
+   * as damage on a face.
+   */
+  --team-card-radius: 1rem;
+
+  /*
    * Seconds each card spends crossing the rail, not the length of the loop —
    * the duration is multiplied by the card count so adding people slows the
    * animation down instead of speeding it up. Ambient: raise it, do not lower
@@ -407,6 +414,11 @@
   clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
 }
 
+/* Team cards take a rounded shape on all four corners instead. */
+@utility team-card-shape {
+  border-radius: var(--team-card-radius);
+}
+
 /* The badge pill — type role, colour and shape travel together. */
 @utility card-badge {
   font-family: var(--font-display);
@@ -493,11 +505,15 @@
 /* --------------------------------------------------------------------------
    The team rail — two rows looping in opposite directions.
 
-   The track holds the members twice and slides exactly -50%, so the reset
-   lands on an identical frame and is invisible. That only holds if both halves
-   are the same width, which is why the spacing is a margin on each card rather
-   than a `gap`: a gap between the two halves would make the second half half a
-   gap narrower and the loop would visibly jump.
+   The track holds N identical copies of the member set and slides by exactly
+   one set's width, so the loop point lands on a frame identical to the start.
+   N is computed at runtime from the viewport (see TeamRail) and is always high
+   enough that the track is at least twice the viewport wide — that is what
+   stops a gap opening at the right end when there are only a few members.
+
+   The spacing is a margin on each card rather than a `gap` so every copy is
+   exactly the same width; a gap between the copies would make the last one
+   short and the loop would jump.
    -------------------------------------------------------------------------- */
 
 .team-row {
@@ -505,6 +521,8 @@
   /* Room for the centre card to scale into. `overflow` clips at the padding
      box, so this is what keeps 1.08 from being sheared off. */
   padding-block: 1rem;
+  /* The whole row is the pause target. */
+  cursor: pointer;
 }
 
 .team-track {
@@ -523,7 +541,11 @@
   animation-direction: reverse;
 }
 
-.team-track > li {
+.team-set {
+  display: flex;
+}
+
+.team-set > li {
   flex: none;
   width: var(--team-card-w-sm);
   margin-inline-end: 1.5rem;
@@ -535,41 +557,48 @@
 }
 
 @media (width >= 48rem) {
-  .team-track > li {
+  .team-set > li {
     width: var(--team-card-w);
   }
 }
 
 /*
- * Pause is not a nicety: the cards carry links, and a link that is sliding
- * away is close to unclickable. Hover and focus-within both stop the row, and
- * the toggle stops both rows.
+ * Hover deliberately does NOT pause: a row that stops whenever the pointer
+ * crosses it is unpredictable, and tapping is the explicit control instead.
+ *
+ * Focus-within stays. A keyboard user cannot tap to pause before tabbing, and
+ * a link that slides out from under the focus ring is unusable. It is
+ * invisible to everyone else.
  */
-.team-rail:hover .team-track,
 .team-rail:focus-within .team-track,
 .team-rail[data-playing="false"] .team-track {
   animation-play-state: paused;
 }
 
-/* `data-active` is set by TeamRail's observer — see CardRail for why the
-   attribute lives on the DOM node rather than in React state. */
-/* The brightness lands on the photo, not the card: lifting the whole card
+/* `data-active` is set by TeamRail's rAF loop — the attribute lives on the DOM
+   node because the tracks are measured, not re-rendered.
+
+   The brightness lands on the photo, not the card: lifting the whole card
    would lift the scrim with it and cost the name its contrast. */
-.team-track > li[data-active="true"] {
+.team-set > li[data-active="true"] {
   z-index: 1;
   scale: 1.08;
 }
 
-.team-track > li[data-active="true"] .team-photo {
+.team-set > li[data-active="true"] .team-photo {
   filter: brightness(1.12);
 }
 
+/*
+ * One set's width is `100% / --team-repeat` of the track, because every copy is
+ * identical. Falls back to 2 for the first paint, before the measurement runs.
+ */
 @keyframes team-scroll {
   from {
     transform: translate3d(0, 0, 0);
   }
   to {
-    transform: translate3d(-50%, 0, 0);
+    transform: translate3d(calc(-100% / var(--team-repeat, 2)), 0, 0);
   }
 }
 

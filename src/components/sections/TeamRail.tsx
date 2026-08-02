@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PauseIcon, PlayIcon } from "lucide-react";
 
@@ -12,22 +12,24 @@ import type { TeamMember } from "@/types";
 /**
  * Two rows of team cards drifting in opposite directions.
  *
- * The loop is pure CSS: each row holds its members twice and slides exactly
- * -50%, which lands on a frame identical to the start, so the reset is
- * invisible. JavaScript never touches the transform — it only decides which
- * card is centred and whether the rows are playing.
+ * The loop is CSS. Each row repeats its member set enough times to overflow the
+ * viewport twice, then slides by exactly one set's width — every copy is
+ * identical, so the reset lands on the same frame and is invisible.
+ * JavaScript measures, marks the centre card, and owns the paused flag; it
+ * never touches the transform.
  *
  * Under reduced motion none of that exists. The rail becomes a two-row grid the
  * user scrolls themselves.
  */
 
+/** Resize is noisy; the measurement is not cheap enough to run per event. */
+const RESIZE_DEBOUNCE_MS = 150;
+
 /**
- * Leaves a 6% band across the middle of the viewport. Wider than the gap
- * between cards, so a card is essentially always emphasised; the cost is that
- * during a handoff both neighbours are briefly inside it, which reads as a
- * crossfade rather than a fault.
+ * How often the centre card is recalculated. The scale transition is 350ms, so
+ * anything faster than this is work nobody can see.
  */
-const CENTRE_BAND = "0px -47% 0px -47%";
+const PICK_INTERVAL_MS = 100;
 
 type TeamRailProps = {
   members: TeamMember[];
@@ -46,8 +48,17 @@ export function TeamRail({
   action,
 }: TeamRailProps) {
   const railRef = useRef<HTMLDivElement | null>(null);
+  /** The card each row currently has emphasised, one entry per row. */
+  const activeRef = useRef<(HTMLElement | null)[]>([]);
   const [playing, setPlaying] = useState(true);
   const [reduced, setReduced] = useState(false);
+
+  /* Split, rather than interleave, so each row reads as a group. */
+  const half = Math.ceil(members.length / 2);
+  const rows = [members.slice(0, half), members.slice(half)];
+
+  /** How many copies of each row's set are on the track. One entry per row. */
+  const [repeats, setRepeats] = useState<number[]>(() => rows.map(() => 2));
 
   useEffect(() => {
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -58,41 +69,153 @@ export function TeamRail({
     return () => motion.removeEventListener("change", sync);
   }, []);
 
-  /* ---- Centre card ------------------------------------------------------- */
+  /* ---- How many copies each row needs ------------------------------------ */
   useEffect(() => {
     if (reduced) return;
 
     const rail = railRef.current;
     if (!rail) return;
 
-    const cards = Array.from(
-      rail.querySelectorAll<HTMLElement>(".team-track > li"),
-    );
+    let timer = 0;
 
-    /* Root is the viewport, not the rail: "nearest the centre" means the centre
-       of the screen, and both rows share that line. */
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          const card = entry.target as HTMLElement;
-          if (entry.isIntersecting) card.setAttribute("data-active", "true");
-          else card.removeAttribute("data-active");
-        }
-      },
-      { rootMargin: CENTRE_BAND, threshold: 0 },
-    );
+    const measure = () => {
+      const rowEls = Array.from(
+        rail.querySelectorAll<HTMLElement>("[data-team-row]"),
+      );
 
-    cards.forEach((card) => observer.observe(card));
+      const next = rowEls.map((rowEl) => {
+        const set = rowEl.querySelector<HTMLElement>(".team-set");
+        const setWidth = set?.offsetWidth ?? 0;
+        /* Before layout settles there is nothing to divide by. */
+        if (!setWidth) return 2;
 
+        /* Twice the viewport: one screen showing, one screen of runway, so the
+           track can never run out no matter where the animation is. */
+        return Math.max(2, Math.ceil((rowEl.clientWidth * 2) / setWidth));
+      });
+
+      setRepeats((previous) =>
+        previous.length === next.length &&
+        previous.every((value, index) => value === next[index])
+          ? previous
+          : next,
+      );
+    };
+
+    measure();
+
+    const onResize = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(measure, RESIZE_DEBOUNCE_MS);
+    };
+
+    window.addEventListener("resize", onResize);
     return () => {
-      observer.disconnect();
-      cards.forEach((card) => card.removeAttribute("data-active"));
+      window.clearTimeout(timer);
+      window.removeEventListener("resize", onResize);
     };
   }, [reduced]);
 
-  /* Split, rather than interleave, so each row reads as a group. */
-  const half = Math.ceil(members.length / 2);
-  const rows = [members.slice(0, half), members.slice(half)];
+  /* ---- Centre card ------------------------------------------------------- */
+  useEffect(() => {
+    if (reduced || !playing) return;
+
+    const rail = railRef.current;
+    if (!rail) return;
+
+    let frame = 0;
+    let lastPick = 0;
+    let onScreen = false;
+    /* Held across effect runs so pausing does not drop the emphasis: the loop
+       stops, the card it picked stays picked. */
+    const active = activeRef.current;
+
+    const tick = (now: number) => {
+      frame = requestAnimationFrame(tick);
+      if (now - lastPick < PICK_INTERVAL_MS) return;
+      lastPick = now;
+
+      const centre = window.innerWidth / 2;
+      const tracks = Array.from(
+        rail.querySelectorAll<HTMLElement>(".team-track"),
+      );
+
+      /*
+        Read every rect first, write every class after. Interleaving them would
+        invalidate layout between each read and force a reflow per card.
+
+        Nearest-to-centre rather than an observer band: proximity is what is
+        actually wanted, and it yields exactly one winner per row — a band
+        reports overlap, so it fires for two cards when both straddle it and for
+        none when a gap crosses it.
+      */
+      const picks = tracks.map((track) => {
+        let best: HTMLElement | null = null;
+        let bestDistance = Infinity;
+
+        /* `.team-set > li` and not `li`: each card carries its own list of
+           social links, and those list items are nearer the centre line more
+           often than the cards are. */
+        for (const card of track.querySelectorAll<HTMLElement>(
+          ".team-set > li",
+        )) {
+          const rect = card.getBoundingClientRect();
+          const distance = Math.abs(rect.left + rect.width / 2 - centre);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            best = card;
+          }
+        }
+
+        return best;
+      });
+
+      picks.forEach((pick, index) => {
+        if (pick === active[index]) return;
+        active[index]?.removeAttribute("data-active");
+        pick?.setAttribute("data-active", "true");
+        active[index] = pick;
+      });
+    };
+
+    /* Nothing to measure while the section is off screen. */
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting === onScreen) return;
+        onScreen = entry.isIntersecting;
+
+        if (onScreen) {
+          lastPick = 0;
+          frame = requestAnimationFrame(tick);
+        } else if (frame) {
+          cancelAnimationFrame(frame);
+          frame = 0;
+        }
+      },
+      { threshold: 0 },
+    );
+
+    observer.observe(rail);
+
+    return () => {
+      observer.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [reduced, playing, repeats]);
+
+  /* Clearing the marks belongs to unmount, not to every pause. */
+  useEffect(() => {
+    const active = activeRef.current;
+    return () => {
+      active.forEach((card) => card?.removeAttribute("data-active"));
+      active.length = 0;
+    };
+  }, [reduced]);
+
+  /* Tapping a card is the pause control. The duplicate sets are `inert`, so a
+     tap on one of those lands here on the row instead — which is why the
+     handler is on the row and not on each card. */
+  const toggle = useCallback(() => setPlaying((on) => !on), []);
 
   return (
     <section aria-labelledby={id} className="py-12 md:py-16">
@@ -107,14 +230,21 @@ export function TeamRail({
             )}
           </div>
 
-          <div className="flex shrink-0 items-center gap-2 self-start sm:self-auto">
+          <div className="flex shrink-0 items-center gap-3 self-start sm:self-auto">
+            {/* Says out loud what a stopped row otherwise leaves mysterious. */}
+            {!reduced && !playing && (
+              <span className="text-small text-muted">
+                Paused — tap to resume
+              </span>
+            )}
+
             {/* Nothing moves under reduced motion, so nothing to pause. */}
             {!reduced && (
               <Button
                 type="button"
                 variant="outline"
                 size="lg"
-                onClick={() => setPlaying((on) => !on)}
+                onClick={toggle}
                 aria-pressed={!playing}
               >
                 {playing ? <PauseIcon /> : <PlayIcon />}
@@ -153,31 +283,44 @@ export function TeamRail({
           data-playing={playing}
           className="team-rail mt-8 flex flex-col gap-6"
         >
-          {rows.map((row, index) => (
-            <div key={index} className="team-row">
-              <ul
-                style={{ "--team-count": row.length } as React.CSSProperties}
-                className={`team-track ${index === 1 ? "team-track-reverse" : ""}`}
+          {rows.map((row, rowIndex) => (
+            <div
+              key={rowIndex}
+              data-team-row
+              onClick={toggle}
+              className="team-row"
+            >
+              <div
+                style={
+                  {
+                    "--team-count": row.length,
+                    "--team-repeat": repeats[rowIndex] ?? 2,
+                  } as React.CSSProperties
+                }
+                className={`team-track ${rowIndex === 1 ? "team-track-reverse" : ""}`}
               >
-                {row.map((member) => (
-                  <li key={member.id}>
-                    <TeamCard member={member} />
-                  </li>
+                {Array.from({ length: repeats[rowIndex] ?? 2 }, (_, copy) => (
+                  <ul
+                    key={copy}
+                    className="team-set"
+                    /*
+                      Only the first copy is real. The rest are there so the
+                      track can outrun the viewport: `aria-hidden` keeps them out
+                      of the reading order and `inert` keeps their social links
+                      out of the tab order — without the second, a keyboard user
+                      would tab through every member N times and land on links
+                      marked hidden.
+                    */
+                    {...(copy > 0 ? { "aria-hidden": true, inert: true } : {})}
+                  >
+                    {row.map((member) => (
+                      <li key={`${member.id}-${copy}`}>
+                        <TeamCard member={member} />
+                      </li>
+                    ))}
+                  </ul>
                 ))}
-
-                {/*
-                  The second set exists only so the -50% reset has somewhere to
-                  land. `aria-hidden` keeps it out of the reading order and
-                  `inert` keeps its social links out of the tab order — without
-                  the second, a keyboard user would tab through every member
-                  twice and hit links marked hidden.
-                */}
-                {row.map((member) => (
-                  <li key={`${member.id}-loop`} aria-hidden="true" inert>
-                    <TeamCard member={member} />
-                  </li>
-                ))}
-              </ul>
+              </div>
             </div>
           ))}
         </div>
