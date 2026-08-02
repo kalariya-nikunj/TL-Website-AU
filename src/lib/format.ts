@@ -32,6 +32,39 @@ export function formatCardDate(iso: string): string {
   }).format(new Date(iso));
 }
 
+/** "August 2026" — the sticky group heading on the events list. */
+export function formatMonthGroup(iso: string): string {
+  return new Intl.DateTimeFormat(LOCALE, {
+    month: "long",
+    year: "numeric",
+    timeZone: TIME_ZONE,
+  }).format(new Date(iso));
+}
+
+/**
+ * The three lines of an event row's date block: "AUG", "14", "Friday".
+ *
+ * One formatter rather than three so the parts can never disagree about which
+ * day they are describing.
+ */
+export function formatDateBlock(iso: string): {
+  month: string;
+  day: string;
+  weekday: string;
+} {
+  const date = new Date(iso);
+  const part = (options: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat(LOCALE, { ...options, timeZone: TIME_ZONE }).format(
+      date,
+    );
+
+  return {
+    month: part({ month: "short" }),
+    day: part({ day: "numeric" }),
+    weekday: part({ weekday: "long" }),
+  };
+}
+
 /**
  * "14 August 2026, 10:00 am – 12:30 pm" for a same-day event,
  * "5 September 2026 – 6 September 2026" when it spans days.

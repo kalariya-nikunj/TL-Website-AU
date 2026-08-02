@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 
-import { ProjectCard } from "@/components/cards/ProjectCard";
 import { CTASection } from "@/components/sections/CTASection";
-import { CardGrid } from "@/components/sections/CardGrid";
 import { PageHero } from "@/components/sections/PageHero";
+import { ProjectGallery } from "@/components/sections/ProjectGallery";
 import { Section } from "@/components/sections/Section";
 import { SectionHeader } from "@/components/sections/SectionHeader";
-import { featuredProjects, projects } from "@/content/projects";
+import { projects } from "@/content/projects";
 
 export const metadata: Metadata = {
   title: "Portfolio",
@@ -15,9 +14,6 @@ export const metadata: Metadata = {
 };
 
 export default function PortfolioPage() {
-  const featuredSlugs = new Set(featuredProjects.map((p) => p.slug));
-  const rest = projects.filter((project) => !featuredSlugs.has(project.slug));
-
   return (
     <>
       <PageHero
@@ -29,32 +25,21 @@ export default function PortfolioPage() {
         imageAlt="A finished student project on display in the Tinkerer Lab"
       />
 
-      {featuredProjects.length > 0 && (
-        <Section ariaLabelledBy="featured">
-          <SectionHeader id="featured" title="Featured" />
-          <CardGrid className="mt-8">
-            {featuredProjects.map((project) => (
-              <ProjectCard key={project.slug} project={project} />
-            ))}
-          </CardGrid>
-        </Section>
-      )}
-
-      {rest.length > 0 && (
-        <Section ariaLabelledBy="all-projects">
-          <SectionHeader id="all-projects" title="More projects" />
-          <CardGrid className="mt-8">
-            {rest.map((project) => (
-              <ProjectCard key={project.slug} project={project} />
-            ))}
-          </CardGrid>
-        </Section>
-      )}
+      <Section tone="default" ariaLabelledBy="all-projects">
+        <SectionHeader
+          id="all-projects"
+          title="Every project"
+          description="Filter by what a project is made of. Featured work sorts to the front."
+          className="mb-8"
+        />
+        <ProjectGallery projects={projects} />
+      </Section>
 
       <CTASection
         title="Built something here?"
         description="Send us photos and a short write-up and we will add it to the portfolio."
-        primaryAction={{ label: "Submit a project", href: "/help" }}
+        primaryAction={{ label: "Submit a project", href: "/help#contact" }}
+        secondaryAction={{ label: "See the facilities", href: "/facilities" }}
       />
     </>
   );

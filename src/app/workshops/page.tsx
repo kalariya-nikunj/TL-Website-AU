@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
-import { EventCard } from "@/components/cards/EventCard";
-import { CardGrid } from "@/components/sections/CardGrid";
+import { CTASection } from "@/components/sections/CTASection";
+import { EventList } from "@/components/sections/EventList";
 import { PageHero } from "@/components/sections/PageHero";
 import { Section } from "@/components/sections/Section";
 import { SectionHeader } from "@/components/sections/SectionHeader";
-import { getPastEvents, getUpcomingEvents } from "@/content/events";
+import { getAllEvents } from "@/content/events";
 
 export const metadata: Metadata = {
   title: "Workshops & events",
@@ -13,12 +13,15 @@ export const metadata: Metadata = {
     "Inductions, skill workshops, and open days at the Tinkerer Lab. Free to attend for all students.",
 };
 
-/** Upcoming/past split is time-dependent — revalidate hourly. */
+/** The upcoming/past split is time-dependent — revalidate hourly. */
 export const revalidate = 3600;
 
 export default function WorkshopsPage() {
-  const upcoming = getUpcomingEvents();
-  const past = getPastEvents();
+  const events = getAllEvents();
+  /* Resolved once, on the server, and handed to the list. The client must not
+     decide what "past" means or its first render would disagree with this
+     markup. */
+  const nowIso = new Date().toISOString();
 
   return (
     <>
@@ -31,42 +34,34 @@ export default function WorkshopsPage() {
         imageAlt="An induction session running in the Tinkerer Lab"
       />
 
-      <Section ariaLabelledBy="upcoming">
-        <SectionHeader id="upcoming" title="Upcoming" />
-        {upcoming.length > 0 ? (
-          <CardGrid className="mt-8">
-            {upcoming.map((event) => (
-              <EventCard key={event.slug} event={event} />
-            ))}
-          </CardGrid>
-        ) : (
-          <p className="mt-6 text-muted">
-            Nothing scheduled right now. Check back at the start of term.
-          </p>
-        )}
+      <Section tone="default" ariaLabelledBy="events">
+        <SectionHeader
+          id="events"
+          title="What's on"
+          description="Every session is free. Inductions are the ones that unlock a machine — the rest are there because someone wanted to teach them."
+          className="mb-8"
+        />
+        <EventList events={events} nowIso={nowIso} />
       </Section>
 
-      {past.length > 0 && (
-        <Section ariaLabelledBy="past">
-          <SectionHeader id="past" title="Past events" />
-          <CardGrid className="mt-8">
-            {past.map((event) => (
-              <EventCard key={event.slug} event={event} />
-            ))}
-          </CardGrid>
-        </Section>
-      )}
-
-      <Section ariaLabelledBy="calendar">
+      <Section tone="tint" id="calendar" ariaLabelledBy="calendar-heading">
         <SectionHeader
-          id="calendar"
+          id="calendar-heading"
           title="Lab calendar"
           description="The Google Calendar embed lands in Phase 4 — it becomes the source of truth for dates."
+          className="mb-8"
         />
-        <div className="mt-6 flex aspect-video w-full items-center justify-center rounded-lg bg-primary-tint text-sm text-muted">
+        <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-border bg-surface text-small text-muted">
           Calendar embed — Phase 4
         </div>
       </Section>
+
+      <CTASection
+        title="Not sure which one to book?"
+        description="Start with an induction for the machine your project needs. If you are not sure which that is, ask us."
+        primaryAction={{ label: "Get help", href: "/help" }}
+        secondaryAction={{ label: "See the facilities", href: "/facilities" }}
+      />
     </>
   );
 }
