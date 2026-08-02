@@ -132,6 +132,18 @@
   --text-badge--letter-spacing: 0.08em;
   --text-badge--font-weight: 600;
 
+  /* Band headings. Starts smaller than an h1 so it does not fight the hero. */
+  --text-section-title: clamp(1.75rem, 3.5vw, 2.75rem);
+  --text-section-title--line-height: 1.1;
+  --text-section-title--letter-spacing: -0.02em;
+  --text-section-title--font-weight: 700;
+
+  /* Stat figures. Large enough to read as a spec plate, not a paragraph. */
+  --text-stat: clamp(2.25rem, 4vw, 3.25rem);
+  --text-stat--line-height: 1;
+  --text-stat--letter-spacing: -0.03em;
+  --text-stat--font-weight: 700;
+
   /*
    * Interior page titles. Smaller than the homepage hero, larger than an h1 —
    * these sit beside a full-height image panel and have to hold that weight.
@@ -217,6 +229,12 @@
   --card-w: 22rem;
   --card-w-sm: 17rem;
   --card-grid-min: 20rem;
+
+  /*
+   * The one vertical rhythm on the site. Nothing else sets section padding —
+   * change this and every band on every page moves together.
+   */
+  --section-y: clamp(4rem, 8vw, 7rem);
 
   /* Team cards are portrait and narrower — they read as a row of faces. */
   --team-card-w: 15rem;
@@ -338,6 +356,27 @@
   color: var(--color-background);
   --eyebrow-color: var(--color-accent);
   --underline-color: var(--color-accent);
+  /* Headings and lede text read these, so a section flips tone with one class
+     instead of every child taking a colour prop. */
+  --heading-color: var(--color-background);
+  --lede-color: color-mix(in oklab, var(--color-background) 80%, transparent);
+}
+
+/*
+ * A band heading. Colour comes from the tone, not the caller — see `dark-band`.
+ */
+@utility section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-section-title);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--heading-color, var(--color-primary-dark));
+}
+
+/* The supporting line under a heading. Same tone story. */
+@utility section-lede {
+  color: var(--lede-color, var(--color-muted));
 }
 
 /* Underline that reads as a link affordance without failing contrast. */
@@ -412,6 +451,14 @@
  */
 @utility card-chamfer {
   clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+}
+
+/*
+ * The PageHero cut, reduced to a single corner at block scale. Bigger than the
+ * card's 16px so it still reads at the width of a full band.
+ */
+@utility block-chamfer {
+  clip-path: polygon(0 0, calc(100% - 3rem) 0, 100% 3rem, 100% 100%, 0 100%);
 }
 
 /* Team cards take a rounded shape on all four corners instead. */
@@ -500,6 +547,36 @@
 .card-rail-list > li[data-active="true"] [data-card-title] {
   font-size: var(--text-card-title-lg);
   line-height: var(--text-card-title-lg--line-height);
+}
+
+/* --------------------------------------------------------------------------
+   Section rhythm.
+
+   `--section-y` is the only vertical spacing on the site. Page files never set
+   padding; they choose a tone and a size and the rest follows.
+   -------------------------------------------------------------------------- */
+
+.section {
+  padding-block: var(--section-y);
+}
+
+.section-compact {
+  padding-block: calc(var(--section-y) / 2);
+}
+
+/*
+ * A change of tone is what earns a gap. Two sections of the same tone read as
+ * one continuous surface, so the second drops its leading padding rather than
+ * stacking two full gaps into a dead band.
+ *
+ * `:where()` on the preceding sibling keeps that half of the selector at zero
+ * specificity; the matched half stays a plain class so it still outranks
+ * `.section` and actually wins.
+ */
+:where(.tone-default) + .section.tone-default,
+:where(.tone-tint) + .section.tone-tint,
+:where(.tone-dark) + .section.tone-dark {
+  padding-block-start: 0;
 }
 
 /* --------------------------------------------------------------------------

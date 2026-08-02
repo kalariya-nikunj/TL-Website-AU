@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { CTASection } from "@/components/sections/CTASection";
+import { Container } from "@/components/layout/Container";
 import { PageHero } from "@/components/sections/PageHero";
 import { Section } from "@/components/sections/Section";
 import { SectionHeader } from "@/components/sections/SectionHeader";
@@ -43,12 +44,18 @@ export default function AboutPage() {
 
       {/* `id="team"` is the target of /about#team from the header and footer —
           it has to stay on the heading. */}
-      <TeamRail
-        id="team"
-        title="The team"
-        description="Placeholder copy. Staff and student coordinators who run inductions, supervise the shop floor, and maintain the equipment."
-        members={team}
-      />
+      <Section tone="tint" bleed ariaLabelledBy="team">
+        <Container>
+          <SectionHeader
+            id="team"
+            title="The team"
+            description="Placeholder copy. Staff and student coordinators who run inductions, supervise the shop floor, and maintain the equipment."
+            className="mb-8"
+          />
+        </Container>
+
+        <TeamRail members={team} ariaLabel="The Tinkerer Lab team" />
+      </Section>
 
       <CTASection
         title="Want to work in the lab?"

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 
 import { Container } from "@/components/layout/Container";
@@ -29,26 +28,13 @@ import { Button } from "@/components/ui/button";
 const BAND = "0px -78% 0px 0px";
 
 type CardRailProps = {
-  /** Ties the heading to the section's accessible name. */
-  id: string;
-  title: string;
-  description?: string;
-  /** The "see everything" link, top right. */
-  action: { label: string; href: string };
   /** `<li>` cards. The rail styles and marks them; it does not create them. */
   children: React.ReactNode;
-  /** Names the scroll region. Defaults to the section title. */
-  ariaLabel?: string;
+  /** Names the scroll region — required, since the rail has no heading. */
+  ariaLabel: string;
 };
 
-export function CardRail({
-  id,
-  title,
-  description,
-  action,
-  children,
-  ariaLabel,
-}: CardRailProps) {
+export function CardRail({ children, ariaLabel }: CardRailProps) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
 
@@ -163,53 +149,34 @@ export function CardRail({
   const scrollable = !(atStart && atEnd);
 
   return (
-    <section aria-labelledby={id} className="py-12 md:py-16">
-      <Container>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-2xl">
-            <h2 id={id} className="font-display text-h2 text-primary-dark">
-              {title}
-            </h2>
-            {description && (
-              <p className="mt-3 text-body text-muted">{description}</p>
-            )}
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            {scrollable && (
-              <div className="hidden items-center gap-2 lg:flex">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => step(-1)}
-                  disabled={atStart}
-                  aria-label="Scroll left"
-                >
-                  <ArrowLeftIcon />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => step(1)}
-                  disabled={atEnd}
-                  aria-label="Scroll right"
-                >
-                  <ArrowRightIcon />
-                </Button>
-              </div>
-            )}
-
-            <Button asChild size="sm">
-              <Link href={action.href}>
-                {action.label}
-                <ArrowRightIcon aria-hidden="true" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </Container>
+    <div>
+      {/* Rail controls, not section controls — they sit with the rail rather
+          than in the heading row, which belongs to SectionHeader. Touch never
+          sees them: the partial card at the right edge is the affordance. */}
+      {scrollable && (
+        <Container className="mb-4 hidden justify-end gap-2 lg:flex">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => step(-1)}
+            disabled={atStart}
+            aria-label="Scroll left"
+          >
+            <ArrowLeftIcon />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => step(1)}
+            disabled={atEnd}
+            aria-label="Scroll right"
+          >
+            <ArrowRightIcon />
+          </Button>
+        </Container>
+      )}
 
       {/*
         Full width, so the rail runs off the right edge of the screen and a
@@ -223,13 +190,13 @@ export function CardRail({
         ref={scrollerRef}
         tabIndex={0}
         role="region"
-        aria-label={ariaLabel ?? title}
-        className="card-rail mt-8 overflow-x-auto overscroll-x-contain py-8"
+        aria-label={ariaLabel}
+        className="card-rail overflow-x-auto overscroll-x-contain py-8"
       >
         <ul ref={listRef} className="card-rail-list flex w-max gap-6">
           {children}
         </ul>
       </div>
-    </section>
+    </div>
   );
 }

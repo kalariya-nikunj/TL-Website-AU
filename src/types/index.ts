@@ -40,6 +40,12 @@ export type Spec = {
   value: string;
 };
 
+/** A figure on the homepage stat band. `value` is pre-formatted for display. */
+export type Stat = {
+  value: string;
+  label: string;
+};
+
 /** Keys onto the lucide icon map in Footer.tsx. */
 export type SocialIcon = "instagram" | "linkedin" | "youtube" | "github";
 
@@ -112,6 +118,8 @@ export type FaqItem = {
 export type NewsItem = {
   id: string;
   label: string;
+  /** Shown in place of `label` on the homepage strip when present. */
+  date?: string;
   text: string;
   href?: string;
 };

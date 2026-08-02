@@ -3,6 +3,7 @@ import type {
   NavItem,
   NavLink,
   Social,
+  Stat,
   TextToken,
 } from "@/types";
 
@@ -15,6 +16,18 @@ export const site = {
     "The Tinkerer Lab is Ahmedabad University's maker and fabrication space — open to every student who wants to turn an idea into a physical thing.",
   url: "https://tinkererlab.ahduni.edu.in",
 } as const;
+
+/**
+ * PLACEHOLDER FIGURES — the homepage stat band. Pre-formatted strings rather
+ * than numbers so thousands separators and the "+" are content decisions, not
+ * locale accidents.
+ */
+export const stats: Stat[] = [
+  { value: "24", label: "Machines available" },
+  { value: "60+", label: "Workshops run" },
+  { value: "1,200", label: "Students trained" },
+  { value: "180", label: "Projects built" },
+];
 
 /** Flat list used by the footer's "Explore" column. */
 export const navLinks: NavLink[] = [

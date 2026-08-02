@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { PauseIcon, PlayIcon } from "lucide-react";
 
 import { Container } from "@/components/layout/Container";
@@ -33,20 +32,11 @@ const PICK_INTERVAL_MS = 100;
 
 type TeamRailProps = {
   members: TeamMember[];
-  id: string;
-  title: string;
-  description?: string;
-  /** Optional "see everyone" link, beside the pause toggle. */
-  action?: { label: string; href: string };
+  /** Names the scroll region under reduced motion, where the rows are static. */
+  ariaLabel: string;
 };
 
-export function TeamRail({
-  members,
-  id,
-  title,
-  description,
-  action,
-}: TeamRailProps) {
+export function TeamRail({ members, ariaLabel }: TeamRailProps) {
   const railRef = useRef<HTMLDivElement | null>(null);
   /** The card each row currently has emphasised, one entry per row. */
   const activeRef = useRef<(HTMLElement | null)[]>([]);
@@ -218,56 +208,35 @@ export function TeamRail({
   const toggle = useCallback(() => setPlaying((on) => !on), []);
 
   return (
-    <section aria-labelledby={id} className="py-12 md:py-16">
-      <Container>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-2xl">
-            <h2 id={id} className="font-display text-h2 text-primary-dark">
-              {title}
-            </h2>
-            {description && (
-              <p className="mt-3 text-body text-muted">{description}</p>
-            )}
-          </div>
+    <div>
+      {/* Nothing moves under reduced motion, so there is nothing to control. */}
+      {!reduced && (
+        <Container className="mb-4 flex items-center justify-end gap-3">
+          {/* Says out loud what a stopped row otherwise leaves mysterious. */}
+          {!playing && (
+            <span className="text-small text-muted">Paused — tap to resume</span>
+          )}
 
-          <div className="flex shrink-0 items-center gap-3 self-start sm:self-auto">
-            {/* Says out loud what a stopped row otherwise leaves mysterious. */}
-            {!reduced && !playing && (
-              <span className="text-small text-muted">
-                Paused — tap to resume
-              </span>
-            )}
-
-            {/* Nothing moves under reduced motion, so nothing to pause. */}
-            {!reduced && (
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                onClick={toggle}
-                aria-pressed={!playing}
-              >
-                {playing ? <PauseIcon /> : <PlayIcon />}
-                {playing ? "Pause" : "Play"}
-              </Button>
-            )}
-
-            {action && (
-              <Button asChild size="lg">
-                <Link href={action.href}>{action.label}</Link>
-              </Button>
-            )}
-          </div>
-        </div>
-      </Container>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={toggle}
+            aria-pressed={!playing}
+          >
+            {playing ? <PauseIcon /> : <PlayIcon />}
+            {playing ? "Pause" : "Play"}
+          </Button>
+        </Container>
+      )}
 
       {reduced ? (
         /* Two rows, scrolled by hand. Same cards, no motion of any kind. */
         <div
           tabIndex={0}
           role="region"
-          aria-label={`${title} — scroll to see everyone`}
-          className="card-rail mt-8 overflow-x-auto overscroll-x-contain py-4"
+          aria-label={ariaLabel}
+          className="card-rail overflow-x-auto overscroll-x-contain py-4"
         >
           <ul className="grid w-max auto-cols-[var(--team-card-w-sm)] grid-flow-col grid-rows-2 gap-6 md:auto-cols-[var(--team-card-w)]">
             {members.map((member) => (
@@ -281,7 +250,7 @@ export function TeamRail({
         <div
           ref={railRef}
           data-playing={playing}
-          className="team-rail mt-8 flex flex-col gap-6"
+          className="team-rail flex flex-col gap-6"
         >
           {rows.map((row, rowIndex) => (
             <div
@@ -325,6 +294,6 @@ export function TeamRail({
           ))}
         </div>
       )}
-    </section>
+    </div>
   );
 }
