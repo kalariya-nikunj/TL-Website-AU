@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { FacilityCard } from "@/components/cards/FacilityCard";
 import { CTASection } from "@/components/sections/CTASection";
 import { CardGrid } from "@/components/sections/CardGrid";
-import { PageHeader } from "@/components/sections/PageHeader";
+import { PageHero } from "@/components/sections/PageHero";
 import { Section } from "@/components/sections/Section";
 import { SectionHeader } from "@/components/sections/SectionHeader";
 import { facilities } from "@/content/facilities";
@@ -19,9 +19,13 @@ export default function FacilitiesPage() {
 
   return (
     <>
-      <PageHeader
+      <PageHero
+        eyebrow="Machines & workshops"
         title="Facilities"
-        description="Everything in the lab, and what it takes to get access to it. Machines marked “induction required” need a short workshop first."
+        subtitle="Everything in the lab, and what it takes to get access to it. Machines marked “induction required” need a short workshop first."
+        imageDefault="/images/hero/facilities-a.jpg"
+        imageHover="/images/hero/facilities-b.jpg"
+        imageAlt="Fabrication equipment on the Tinkerer Lab shop floor"
       />
 
       {categories.map((category) => {

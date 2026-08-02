@@ -106,6 +106,15 @@
   --text-eyebrow--letter-spacing: 0.08em;
   --text-eyebrow--font-weight: 600;
 
+  /*
+   * Interior page titles. Smaller than the homepage hero, larger than an h1 —
+   * these sit beside a full-height image panel and have to hold that weight.
+   */
+  --text-page-hero: clamp(2.5rem, 6vw, 5.5rem);
+  --text-page-hero--line-height: 1;
+  --text-page-hero--letter-spacing: -0.02em;
+  --text-page-hero--font-weight: 700;
+
   /* The header's three-line wordmark — tight enough to stack beside the mark. */
   --text-wordmark: 0.95rem;
   --text-wordmark--line-height: 1.05;
@@ -278,6 +287,60 @@
   &:hover {
     text-decoration-line: underline;
     text-decoration-color: var(--underline-color, var(--color-accent-dark));
+  }
+}
+
+/*
+ * The machined cutout — the PageHero image panel.
+ *
+ * Straight lines only, so it reads as stock cut on a laser bed rather than as
+ * a decorative blob: a chamfer off the top-right corner, a rectangular notch
+ * stepped into the right edge about a third of the way down, a smaller chamfer
+ * bottom-right, and a flush left edge because the panel bleeds off screen.
+ *
+ * `--cut` and `--cut-active` are the only two values to touch when tuning the
+ * geometry. Both MUST keep the same point count (10) and the same winding —
+ * clip-path can only interpolate between polygons that match point for point,
+ * and a mismatch degrades to a hard cut with no transition.
+ *
+ * The chamfers read as 45° at roughly the panel's design ratio (~45vw × 80vh).
+ * Percentages are relative to each axis, so a much wider or taller panel will
+ * skew them.
+ */
+@utility machined-cut {
+  --cut: polygon(
+    0% 0%,
+    82% 0%,
+    100% 15%,
+    100% 30%,
+    86% 30%,
+    86% 43%,
+    100% 43%,
+    100% 88%,
+    92% 100%,
+    0% 100%
+  );
+
+  /* Active: the notch drops and widens, both chamfers deepen — the cut looks
+     re-cut rather than merely nudged. */
+  --cut-active: polygon(
+    0% 0%,
+    72% 0%,
+    100% 23%,
+    100% 50%,
+    79% 50%,
+    79% 66%,
+    100% 66%,
+    100% 79%,
+    85% 100%,
+    0% 100%
+  );
+
+  clip-path: var(--cut);
+  transition: clip-path 400ms ease-out;
+
+  &[data-active="true"] {
+    clip-path: var(--cut-active);
   }
 }
 

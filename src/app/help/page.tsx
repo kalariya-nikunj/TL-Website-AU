@@ -7,7 +7,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { ContactForm } from "@/components/forms/ContactForm";
-import { PageHeader } from "@/components/sections/PageHeader";
+import { PageHero } from "@/components/sections/PageHero";
 import { Section } from "@/components/sections/Section";
 import { SectionHeader } from "@/components/sections/SectionHeader";
 import { contact } from "@/content/site";
@@ -22,9 +22,13 @@ export const metadata: Metadata = {
 export default function HelpPage() {
   return (
     <>
-      <PageHeader
+      <PageHero
+        eyebrow="Start here"
         title="Help"
-        description="How to get into the lab, what you can do once you are in, and who to ask when something is unclear."
+        subtitle="How to get into the lab, what you can do once you are in, and who to ask when something is unclear."
+        imageDefault="/images/hero/help-a.jpg"
+        imageHover="/images/hero/help-b.jpg"
+        imageAlt="The Tinkerer Lab front desk, where visitors register"
       />
 
       <Section ariaLabelledBy="access">

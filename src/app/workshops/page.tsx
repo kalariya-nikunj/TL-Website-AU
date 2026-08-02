@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { EventCard } from "@/components/cards/EventCard";
 import { CardGrid } from "@/components/sections/CardGrid";
-import { PageHeader } from "@/components/sections/PageHeader";
+import { PageHero } from "@/components/sections/PageHero";
 import { Section } from "@/components/sections/Section";
 import { SectionHeader } from "@/components/sections/SectionHeader";
 import { getPastEvents, getUpcomingEvents } from "@/content/events";
@@ -22,9 +22,13 @@ export default function WorkshopsPage() {
 
   return (
     <>
-      <PageHeader
+      <PageHero
+        eyebrow="Learn a machine"
         title="Workshops & events"
-        description="Inductions unlock machine access. Skill workshops teach a technique end to end. Open days need no booking at all."
+        subtitle="Inductions unlock machine access. Skill workshops teach a technique end to end. Open days need no booking at all."
+        imageDefault="/images/hero/workshops-a.jpg"
+        imageHover="/images/hero/workshops-b.jpg"
+        imageAlt="An induction session running in the Tinkerer Lab"
       />
 
       <Section ariaLabelledBy="upcoming">

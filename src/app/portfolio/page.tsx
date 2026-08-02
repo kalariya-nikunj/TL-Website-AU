@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { ProjectCard } from "@/components/cards/ProjectCard";
 import { CTASection } from "@/components/sections/CTASection";
 import { CardGrid } from "@/components/sections/CardGrid";
-import { PageHeader } from "@/components/sections/PageHeader";
+import { PageHero } from "@/components/sections/PageHero";
 import { Section } from "@/components/sections/Section";
 import { SectionHeader } from "@/components/sections/SectionHeader";
 import { featuredProjects, projects } from "@/content/projects";
@@ -20,9 +20,13 @@ export default function PortfolioPage() {
 
   return (
     <>
-      <PageHeader
+      <PageHero
+        eyebrow="Built here"
         title="Portfolio"
-        description="Projects that came out of the lab — course work, competition entries, and things students built because they wanted to."
+        subtitle="Projects that came out of the lab — course work, competition entries, and things students built because they wanted to."
+        imageDefault="/images/hero/portfolio-a.jpg"
+        imageHover="/images/hero/portfolio-b.jpg"
+        imageAlt="A finished student project on display in the Tinkerer Lab"
       />
 
       {featuredProjects.length > 0 && (

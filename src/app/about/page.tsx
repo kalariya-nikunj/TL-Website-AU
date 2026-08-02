@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { TeamCard } from "@/components/cards/TeamCard";
 import { CTASection } from "@/components/sections/CTASection";
 import { CardGrid } from "@/components/sections/CardGrid";
-import { PageHeader } from "@/components/sections/PageHeader";
+import { PageHero } from "@/components/sections/PageHero";
 import { Section } from "@/components/sections/Section";
 import { SectionHeader } from "@/components/sections/SectionHeader";
 import { site } from "@/content/site";
@@ -17,10 +17,13 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <PageHeader
+      <PageHero
         eyebrow={site.university}
         title={`About ${site.name}`}
-        description={site.description}
+        subtitle={site.description}
+        imageDefault="/images/hero/about-a.jpg"
+        imageHover="/images/hero/about-b.jpg"
+        imageAlt="Students working at the benches in the Tinkerer Lab"
       />
 
       <Section ariaLabelledBy="about-what">
