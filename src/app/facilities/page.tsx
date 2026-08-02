@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 
-import { FacilityCard } from "@/components/cards/FacilityCard";
 import { CTASection } from "@/components/sections/CTASection";
-import { CardGrid } from "@/components/sections/CardGrid";
+import { FacilityExplorer } from "@/components/sections/FacilityExplorer";
 import { PageHero } from "@/components/sections/PageHero";
-import { Section } from "@/components/sections/Section";
-import { SectionHeader } from "@/components/sections/SectionHeader";
 import { facilities } from "@/content/facilities";
 
 export const metadata: Metadata = {
@@ -15,8 +12,6 @@ export const metadata: Metadata = {
 };
 
 export default function FacilitiesPage() {
-  const categories = [...new Set(facilities.map((f) => f.category))];
-
   return (
     <>
       <PageHero
@@ -28,21 +23,10 @@ export default function FacilitiesPage() {
         imageAlt="Fabrication equipment on the Tinkerer Lab shop floor"
       />
 
-      {categories.map((category) => {
-        const id = `category-${category.toLowerCase().replace(/\s+/g, "-")}`;
-        const inCategory = facilities.filter((f) => f.category === category);
-
-        return (
-          <Section key={category} ariaLabelledBy={id}>
-            <SectionHeader id={id} title={category} />
-            <CardGrid className="mt-8">
-              {inCategory.map((facility) => (
-                <FacilityCard key={facility.slug} facility={facility} />
-              ))}
-            </CardGrid>
-          </Section>
-        );
-      })}
+      {/* Rows rather than cards: a catalogue is scanned for one machine, and
+          each row carries its own category, so the old per-category sections
+          would repeat it. */}
+      <FacilityExplorer facilities={facilities} />
 
       <CTASection
         title="Need an induction?"
