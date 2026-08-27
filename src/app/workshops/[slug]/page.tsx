@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { CalendarPlusIcon, ClockIcon, MapPinIcon } from "lucide-react";
 
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
-import { Button } from "@/components/ui/button";
 import {
   CheckList,
   DetailList,
@@ -19,11 +18,10 @@ import { eventSlugs, getEvent, getUpcomingEvents } from "@/content/events";
 import { getFacility } from "@/content/facilities";
 import { getTeamMember } from "@/content/team";
 import { site } from "@/content/site";
+import { RegisterAction } from "@/components/forms/RegisterAction";
+import { googleCalendarUrl } from "@/lib/calendar";
 import { formatDateBlock, formatEventRange, formatTime } from "@/lib/format";
 import type { EventLevel } from "@/types";
-
-/** Registration is wired in Phase 4; sign-in is the closest real destination. */
-const REGISTER_HREF = "/login";
 
 const LEVEL: Record<EventLevel, string> = {
   beginner: "Beginner",
@@ -277,28 +275,21 @@ export default async function EventPage({ params }: PageProps) {
                   </div>
                 )}
 
-              {event.registrationOpen ? (
-                <Button asChild size="lg" variant="accent" className="w-full">
-                  <Link href={REGISTER_HREF}>Register</Link>
-                </Button>
-              ) : (
-                <div>
-                  <Button size="lg" variant="accent" className="w-full" disabled>
-                    Register
-                  </Button>
-                  <p className="mt-2 text-small text-muted">
-                    Registration closed.
-                  </p>
-                </div>
-              )}
+              <RegisterAction
+                eventSlug={event.slug}
+                eventTitle={event.title}
+                registrationOpen={event.registrationOpen}
+              />
 
-              <Link
-                href="/workshops#calendar"
+              <a
+                href={googleCalendarUrl(event)}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="hover-underline inline-flex items-center gap-1.5 text-small font-medium text-primary"
               >
                 <CalendarPlusIcon className="size-4" aria-hidden="true" />
                 Add to calendar
-              </Link>
+              </a>
             </div>
 
             {instructor && (
