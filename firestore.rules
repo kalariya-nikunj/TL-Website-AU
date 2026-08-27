@@ -17,21 +17,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /* Mirrors ALLOWED_EMAIL_DOMAINS in src/lib/auth/policy.ts. Keep in sync —
-       there is no way to share a constant between Dart-side rules and TS. */
-    function isUniversityAccount() {
-      return isSignedIn()
-        && request.auth.token.email_verified == true
-        && request.auth.token.email.matches('.*@ahduni[.]edu[.]in$');
-    }
-
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return request.auth != null && request.auth.uid == userId;
     }
+
+    /* There is deliberately no domain check here.
+     *
+     * The email domain is enforced in two places that matter: signIn() rejects
+     * a non-university account, and requireUser() re-checks the verified token
+     * before any Server Action writes. Since no client can write at all, a
+     * third check in these rules would be unreachable — and an unreachable
+     * rule is worse than none, because it reads like protection that isn't
+     * doing anything. */
 
     /**
      * Registrations.

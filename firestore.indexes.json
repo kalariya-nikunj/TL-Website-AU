@@ -1,0 +1,5 @@
+{
+  "//": "Deliberately empty. Every query in this app is either a single-field filter or a doc(id).get(), both of which Firestore serves from automatic indexes. Composite indexes are avoided on purpose: a missing one fails only in production, on whichever path nobody tested. If you add a query that filters on one field and sorts by another, Firestore will refuse it with FailedPrecondition — add the index here and deploy, rather than creating it by hand in the console where it exists only as a click somebody once made.",
+  "indexes": [],
+  "fieldOverrides": []
+}
