@@ -42,3 +42,7 @@ next-env.d.ts
 
 # claude code local settings
 .claude/settings.local.json
+
+#environment
+.env.local
+tinkerer-lab-f5036-firebase-adminsdk-fbsvc-502ee80f39.json

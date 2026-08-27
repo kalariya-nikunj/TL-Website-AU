@@ -1,0 +1,70 @@
+rules_version = '2';
+
+/**
+ * Tinkerer Lab — Firestore security rules.
+ *
+ * Deploy with:  firebase deploy --only firestore:rules
+ *
+ * These records hold names, university emails, student IDs and phone numbers.
+ * The governing rule is: a signed-in student may read their own registrations
+ * and nothing else. Nobody can list a collection. Staff read in the Firebase
+ * console, which uses the admin credential and bypasses these rules entirely.
+ *
+ * Server Actions also use the Admin SDK and bypass everything here, so these
+ * rules exist to constrain the *browser*. They are the second line of defence;
+ * the first is the authorisation check inside each action.
+ */
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /* Mirrors ALLOWED_EMAIL_DOMAINS in src/lib/auth/policy.ts. Keep in sync —
+       there is no way to share a constant between Dart-side rules and TS. */
+    function isUniversityAccount() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.matches('.*@ahduni[.]edu[.]in$');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Registrations.
+     *
+     * Read: only your own document, and only one at a time — `list` is denied,
+     * so no client can enumerate who is attending a workshop.
+     *
+     * Write: none. Creating and cancelling both go through Server Actions,
+     * which validate capacity, ownership and the email domain before writing.
+     * Allowing direct client writes would let a student forge another
+     * student's registration or spoof `createdAt`.
+     */
+    match /registrations/{registrationId} {
+      allow get: if isOwner(resource.data.userId);
+      allow list, create, update, delete: if false;
+    }
+
+    /**
+     * Contact submissions.
+     *
+     * Deliberately no client access at all — not even create. The public
+     * contact form posts to a Server Action, which validates and rate-checks
+     * before writing. A client-writable collection here would be an open spam
+     * endpoint against a database we pay for.
+     */
+    match /contactSubmissions/{submissionId} {
+      allow read, write: if false;
+    }
+
+    /* Anything not matched above is denied. Stated explicitly so that adding a
+       collection later is a deliberate act rather than an accident. */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
