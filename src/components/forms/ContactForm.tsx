@@ -1,17 +1,50 @@
 "use client";
 
+import { useRef, useTransition } from "react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { submitContact } from "@/app/actions/contact";
 
 /**
- * Phase 1: structure only. Phase 4 wires `action` to a Server Action that writes
- * to the `contactSubmissions` collection and raises a toast on success.
+ * The public contact form.
+ *
+ * The only unauthenticated write in the site — a prospective student asking a
+ * question is exactly who it is for. Validation, throttling and the actual
+ * write all happen server-side in `submitContact`; nothing here is trusted.
  */
 export function ContactForm() {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [pending, startTransition] = useTransition();
+
   return (
-    <form className="flex max-w-xl flex-col gap-4">
+    <form
+      ref={formRef}
+      className="flex max-w-xl flex-col gap-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+
+        startTransition(async () => {
+          const result = await submitContact({
+            name: String(data.get("name") ?? ""),
+            email: String(data.get("email") ?? ""),
+            subject: String(data.get("subject") ?? ""),
+            message: String(data.get("message") ?? ""),
+          });
+
+          if (result.ok) {
+            toast.success("Message sent — we will get back to you.");
+            formRef.current?.reset();
+          } else {
+            toast.error(result.error);
+          }
+        });
+      }}
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="contact-name">Name</Label>
@@ -41,12 +74,9 @@ export function ContactForm() {
       </div>
 
       <div>
-        <Button type="submit" disabled>
-          Send message
+        <Button type="submit" disabled={pending}>
+          {pending ? "Sending…" : "Send message"}
         </Button>
-        <p className="mt-2 text-sm text-muted">
-          Sending is enabled in Phase 4, once Firestore is connected.
-        </p>
       </div>
     </form>
   );
