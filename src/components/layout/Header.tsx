@@ -11,6 +11,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { AuthButton } from "@/components/layout/AuthButton";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -314,11 +315,7 @@ export function Header({ variant }: HeaderProps) {
                 </ul>
               </nav>
 
-              <Button asChild size="sm" variant="default">
-                <Link href="/login" onFocus={scheduleClose}>
-                  Sign in
-                </Link>
-              </Button>
+              <AuthButton layout="desktop" onInteract={scheduleClose} />
             </div>
 
             <MobileMenu open={mobileOpen} onOpenChange={setMobileOpen} tone={navColor} />
@@ -439,11 +436,7 @@ function MobileMenu({
         </nav>
 
         <div className="border-t border-border p-4">
-          <Button asChild size="lg" className="w-full">
-            <Link href="/login" onClick={() => onOpenChange(false)}>
-              Sign in
-            </Link>
-          </Button>
+          <AuthButton layout="mobile" onInteract={() => onOpenChange(false)} />
         </div>
       </SheetContent>
     </Sheet>
