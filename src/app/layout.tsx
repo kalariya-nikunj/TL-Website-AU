@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
+import { siteUrl } from "@/lib/site-url";
 import { site } from "@/content/site";
 import "./globals.css";
 
@@ -25,11 +26,30 @@ const body = Inter({
 });
 
 export const metadata: Metadata = {
+  /* Every relative image and canonical URL in the app resolves against this.
+     Unset, Next falls back to localhost and says so at build time. */
+  metadataBase: new URL(siteUrl()),
   title: {
     default: `${site.name} — ${site.university}`,
     template: `%s — ${site.name}`,
   },
   description: site.description,
+  openGraph: {
+    type: "website",
+    siteName: site.name,
+    title: `${site.name} — ${site.university}`,
+    description: site.description,
+    url: siteUrl(),
+    locale: "en_IN",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${site.name} — ${site.university}`,
+    description: site.description,
+  },
+  alternates: {
+    canonical: "/",
+  },
 };
 
 export default function RootLayout({
