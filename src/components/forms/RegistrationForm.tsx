@@ -1,5 +1,8 @@
 "use client";
 
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { createRegistration } from "@/app/actions/registrations";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 const DEPARTMENTS = [
   "Computer Science and Engineering",
@@ -22,35 +27,71 @@ const DEPARTMENTS = [
 type RegistrationFormProps = {
   eventSlug: string;
   eventTitle: string;
+  /** Lets the dialog close and the parent re-check registration state. */
+  onSuccess?: () => void | Promise<void>;
 };
 
-/**
- * Phase 1: structure only. Phase 4 requires a signed-in user, wires `action` to a
- * Server Action writing to `registrations`, and enforces capacity.
- */
 export function RegistrationForm({
   eventSlug,
   eventTitle,
+  onSuccess,
 }: RegistrationFormProps) {
-  return (
-    <form className="flex max-w-xl flex-col gap-4">
-      <input type="hidden" name="eventSlug" value={eventSlug} />
+  const { user, getIdToken } = useAuth();
+  const [pending, startTransition] = useTransition();
+  const [department, setDepartment] = useState<string>("");
 
+  return (
+    <form
+      className="flex flex-col gap-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+
+        startTransition(async () => {
+          const result = await createRegistration(await getIdToken(), {
+            eventSlug,
+            name: String(form.get("name") ?? ""),
+            studentId: String(form.get("studentId") ?? ""),
+            department,
+            phone: String(form.get("phone") ?? ""),
+          });
+
+          if (result.ok) {
+            toast.success(`Registered for ${eventTitle}`);
+            await onSuccess?.();
+          } else {
+            toast.error(result.error);
+          }
+        });
+      }}
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="reg-name">Full name</Label>
-          <Input id="reg-name" name="name" required autoComplete="name" />
+          <Input
+            id="reg-name"
+            name="name"
+            required
+            autoComplete="name"
+            defaultValue={user?.displayName ?? ""}
+          />
         </div>
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="reg-email">University email</Label>
+          {/* Read-only on purpose: the server takes the address from the
+              verified ID token, so an editable field here would imply a choice
+              that does not exist. */}
           <Input
             id="reg-email"
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
+            value={user?.email ?? ""}
+            readOnly
+            aria-describedby="reg-email-hint"
+            className="bg-primary-tint"
           />
+          <p id="reg-email-hint" className="text-sm text-muted">
+            From the account you are signed in with.
+          </p>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -66,28 +107,23 @@ export function RegistrationForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="reg-department">Department</Label>
-        <Select name="department">
+        <Select value={department} onValueChange={setDepartment}>
           <SelectTrigger id="reg-department" className="w-full">
             <SelectValue placeholder="Select a department" />
           </SelectTrigger>
           <SelectContent>
-            {DEPARTMENTS.map((department) => (
-              <SelectItem key={department} value={department}>
-                {department}
+            {DEPARTMENTS.map((item) => (
+              <SelectItem key={item} value={item}>
+                {item}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      <div>
-        <Button type="submit" disabled>
-          Register for {eventTitle}
-        </Button>
-        <p className="mt-2 text-sm text-muted">
-          Registration is enabled in Phase 4, once sign-in and Firestore are connected.
-        </p>
-      </div>
+      <Button type="submit" disabled={pending} className="mt-2">
+        {pending ? "Registering…" : "Confirm registration"}
+      </Button>
     </form>
   );
 }

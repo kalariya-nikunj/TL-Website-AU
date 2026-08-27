@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
+import { MyRegistrations } from "@/components/sections/MyRegistrations";
 import { PageHeader } from "@/components/sections/PageHeader";
 import { Section } from "@/components/sections/Section";
+import { getAllEvents } from "@/content/events";
 
 export const metadata: Metadata = {
   title: "My registrations",
@@ -11,8 +11,13 @@ export const metadata: Metadata = {
 };
 
 /**
- * Phase 4 protects this route, reads the signed-in user's `registrations`
- * documents, and renders them as EventCards with a cancel action.
+ * Route protection is done in the client component rather than with middleware.
+ *
+ * Firebase keeps its session in the browser, so the server has no way to know
+ * who this is without a session cookie — and adding one buys nothing here,
+ * because the page renders no private data itself. The registrations arrive
+ * from a Server Action that verifies an ID token, so an unauthenticated visitor
+ * reaching this URL simply sees the sign-in prompt and no data.
  */
 export default function MyRegistrationsPage() {
   return (
@@ -23,20 +28,10 @@ export default function MyRegistrationsPage() {
       />
 
       <Section>
-        <div className="flex max-w-xl flex-col items-start gap-4 rounded-lg border bg-surface p-8">
-          <p className="text-muted">
-            You are not signed in. Registrations are tied to your university
-            Google account.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Button asChild>
-              <Link href="/login">Sign in</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/workshops">Browse workshops</Link>
-            </Button>
-          </div>
-        </div>
+        <MyRegistrations
+          events={getAllEvents()}
+          nowIso={new Date().toISOString()}
+        />
       </Section>
     </>
   );
