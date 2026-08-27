@@ -340,23 +340,41 @@ when a section component would do — that is how pages drift apart visually.
       is 3.8:1 on its tint, so warning copy is currently `ink`
 
 ### Phase 3 — Sections and polish
-- [ ] Build reference-inspired layouts section by section
-- [ ] Hero, facility grid, team grid, project cards
-- [ ] Hover and focus states, empty states
-- [ ] Optional: subtle motion (Framer Motion), used sparingly
+- [x] Build reference-inspired layouts section by section
+- [x] Hero, facility grid, team grid, project cards
+- [x] Hover and focus states, empty states
+- [x] Subtle motion — GSAP, used sparingly (scroll-driven video hero, team rail)
 
 ### Phase 4 — Dynamic features
-- [ ] Firebase project + config, env vars in Vercel
-- [ ] Google sign-in, auth state in header
-- [ ] Event registration form → Firestore (Server Action)
-- [ ] `/my-registrations` page, route protection
-- [ ] Contact form → Firestore
-- [ ] Firestore security rules
-- [ ] Google Calendar embed or API
+- [x] Firebase project + config — `.env.local`; **Vercel env vars still pending**
+- [x] Google sign-in, auth state in header
+- [x] Event registration form → Firestore (Server Action)
+- [x] `/my-registrations` page, route protection
+- [x] Contact form → Firestore
+- [x] Firestore security rules — deployed to `tinkerer-lab-f5036`
+- [x] ~~Google Calendar embed or API~~ — **cut.** An embed shows the *lab's*
+      calendar; people clicking "Add to calendar" want the session in *theirs*.
+      Replaced by `googleCalendarUrl()` — a plain Calendar template link, no API
+      and no key. Revisit only if the lab starts scheduling from Calendar.
+
+**Decisions taken in Phase 4:**
+- Sign-in is restricted to `@ahduni.edu.in` via `ALLOWED_EMAIL_DOMAINS` in
+  `src/lib/auth/policy.ts` — one constant, enforced client-side *and* re-checked
+  on every Server Action. Set it to `[]` to open sign-in to any Google account.
+- Events stay content-as-code. Adding a workshop is a code change plus a deploy.
+- Capacity is **recorded, not enforced** — seat counts live in a `.ts` file and
+  cannot reflect Firestore without a rebuild.
+- Staff read registrations in the Firebase console. No admin UI.
+- **No composite Firestore indexes**, deliberately. Every query is a
+  single-field filter or a `doc(id).get()`. See `firestore.indexes.json`.
 
 ### Phase 5 — Content and launch
-- [ ] Real copy, real photos (optimised, `next/image`)
-- [ ] Metadata, Open Graph, favicon, sitemap
+- [x] Real copy, real photos — 7 content files, 58 images, 2 videos, all
+      through `next/image`
+- [ ] **Deploy to Vercel** — carried over from Phase 0 and still not done.
+      Nothing is live. ⚠️ Google sign-in will fail on the Vercel URL until that
+      domain is added under Firebase Auth → Settings → Authorized domains.
+- [ ] `metadataBase`, Open Graph image, `sitemap.ts`, `robots.ts`
 - [ ] Accessibility pass — keyboard nav, focus visibility, alt text, contrast
 - [ ] Lighthouse pass
 - [ ] Custom domain
