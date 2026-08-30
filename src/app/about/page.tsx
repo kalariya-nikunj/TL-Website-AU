@@ -35,7 +35,7 @@ const STEPS = [
   },
   {
     title: "Build",
-    body: "Come in during open hours and work. Staff are on the floor if something goes wrong, and materials for small parts are stocked.",
+    body: "Come in during open hours and work. Staff are on the floor if something goes wrong, and materials for small parts are stocked regularly.",
     action: { label: "Lab hours", href: "#visit" },
   },
 ];
