@@ -205,6 +205,19 @@ export type Registration = {
   createdAt: string;
 };
 
+/** User profile returned by the server after Firestore timestamps are serialized. */
+export type UserProfile = {
+  uid: string;
+  name: string;
+  email: string;
+  enrollmentNumber: string;
+  department: string;
+  branch: string;
+  profileCompleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type ContactSubmission = {
   id: string;
   name: string;

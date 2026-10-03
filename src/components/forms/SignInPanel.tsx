@@ -24,7 +24,7 @@ export function SignInPanel() {
   const raw = params.get("next");
   const next = raw && raw.startsWith("/") && !raw.startsWith("//")
     ? raw
-    : "/my-registrations";
+    : "/dashboard";
 
   useEffect(() => {
     if (!loading && user) router.replace(next);

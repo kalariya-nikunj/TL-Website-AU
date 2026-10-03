@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  applicationDefault,
   cert,
   getApps as getAdminApps,
   initializeApp as initializeAdminApp,
@@ -43,6 +44,16 @@ function credentials() {
 function getAdminApp(): App {
   const existing = getAdminApps();
   if (existing.length) return existing[0];
+
+  /* Prefer Application Default Credentials for local development. Point
+     GOOGLE_APPLICATION_CREDENTIALS at the service-account file kept outside
+     the repository; the Admin SDK reads it without exposing it to the client. */
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    return initializeAdminApp({
+      credential: applicationDefault(),
+      projectId: process.env.FIREBASE_ADMIN_PROJECT_ID || undefined,
+    });
+  }
 
   return initializeAdminApp({ credential: cert(credentials()) });
 }

@@ -5,10 +5,11 @@ rules_version = '2';
  *
  * Deploy with:  firebase deploy --only firestore:rules
  *
- * These records hold names, university emails, student IDs and phone numbers.
- * The governing rule is: a signed-in student may read their own registrations
- * and nothing else. Nobody can list a collection. Staff read in the Firebase
- * console, which uses the admin credential and bypasses these rules entirely.
+ * These records hold user profiles, private project details, and workshop
+ * registrations. Users can read their own profile/registrations and projects
+ * where they are owner or member. Profiles and registrations cannot be listed.
+ * Staff read in the Firebase console, which uses the admin credential and
+ * bypasses these rules entirely.
  *
  * Server Actions also use the Admin SDK and bypass everything here, so these
  * rules exist to constrain the *browser*. They are the second line of defence;
@@ -21,6 +22,74 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    function projectExists(projectId) {
+      return exists(/databases/$(database)/documents/projects/$(projectId));
+    }
+
+    function projectData(projectId) {
+      return get(/databases/$(database)/documents/projects/$(projectId)).data;
+    }
+
+    function isProjectOwner(projectId) {
+      return request.auth != null
+        && projectExists(projectId)
+        && projectData(projectId).ownerUid == request.auth.uid;
+    }
+
+    function canReadProject(projectId) {
+      return isProjectOwner(projectId)
+        || (request.auth != null
+          && exists(/databases/$(database)/documents/projects/$(projectId)/members/$(request.auth.uid)));
+    }
+
+    function optionalProjectText(data, field, maximum) {
+      return !(field in data)
+        || (data[field] is string && data[field].size() <= maximum);
+    }
+
+    function validProject(data, projectId) {
+      return data.keys().hasAll([
+          'projectId', 'title', 'slug', 'category', 'shortDescription', 'description',
+          'ownerUid', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'projectId', 'title', 'slug', 'category', 'shortDescription', 'description',
+          'ownerUid', 'status', 'department', 'branch', 'professorName', 'contactEmail',
+          'contactPhone', 'instagramUrl', 'createdAt', 'updatedAt'
+        ])
+        && data.projectId == projectId
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 120
+        && data.slug is string && data.slug.size() > 0 && data.slug.size() <= 90
+        && data.category in ['DIM', 'PDR', 'RESEARCH', 'PERSONAL', 'STARTUP']
+        && data.shortDescription is string && data.shortDescription.size() > 0 && data.shortDescription.size() <= 300
+        && data.description is string && data.description.size() > 0 && data.description.size() <= 10000
+        && data.ownerUid is string
+        && data.status in ['ACTIVE', 'COMPLETED', 'ARCHIVED']
+        && optionalProjectText(data, 'department', 200)
+        && optionalProjectText(data, 'branch', 200)
+        && optionalProjectText(data, 'professorName', 200)
+        && optionalProjectText(data, 'contactEmail', 200)
+        && optionalProjectText(data, 'contactPhone', 200)
+        && optionalProjectText(data, 'instagramUrl', 200)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validProjectMember(data, uid, expectedRole) {
+      let profilePath = /databases/$(database)/documents/users/$(uid);
+      return data.keys().hasAll(['uid', 'name', 'email', 'role', 'joinedAt'])
+        && data.keys().hasOnly(['uid', 'name', 'email', 'role', 'joinedAt'])
+        && data.uid == uid
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.email is string
+        && data.role == expectedRole
+        && data.joinedAt is timestamp
+        && exists(profilePath)
+        && get(profilePath).data.profileCompleted == true
+        && data.name == get(profilePath).data.name
+        && data.email == get(profilePath).data.email;
+    }
+
     /* There is deliberately no domain check here.
      *
      * The email domain is enforced in two places that matter: signIn() rejects
@@ -29,6 +98,103 @@ service cloud.firestore {
      * third check in these rules would be unreachable — and an unreachable
      * rule is worse than none, because it reads like protection that isn't
      * doing anything. */
+
+    /**
+     * User profiles. The Server Actions use verified ID tokens and Admin SDK;
+     * these ownership checks also protect any browser SDK access.
+     */
+    match /users/{uid} {
+      function validProfile(data) {
+        return data.keys().hasAll([
+            'uid', 'name', 'email', 'enrollmentNumber', 'department', 'branch',
+            'profileCompleted', 'createdAt', 'updatedAt'
+          ])
+          && data.keys().hasOnly([
+            'uid', 'name', 'email', 'enrollmentNumber', 'department', 'branch',
+            'profileCompleted', 'createdAt', 'updatedAt'
+          ])
+          && data.uid == uid
+          && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+          && data.email is string
+          && data.enrollmentNumber is string && data.enrollmentNumber.size() > 0 && data.enrollmentNumber.size() <= 40
+          && data.department is string && data.department.size() > 0 && data.department.size() <= 100
+          && data.branch is string && data.branch.size() > 0 && data.branch.size() <= 100
+          && data.profileCompleted == true
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp;
+      }
+
+      allow get: if isOwner(uid);
+      allow list: if false;
+      allow create: if isOwner(uid)
+        && request.auth.token.email_verified == true
+        && request.resource.data.email == request.auth.token.email
+        && validProfile(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isOwner(uid)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.createdAt == resource.data.createdAt
+        && validProfile(request.resource.data)
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    /**
+     * Private user projects. Only owners and listed members can read project
+     * documents. Admin-backed Server Actions still perform their own checks.
+     */
+    match /projects/{projectId} {
+      allow get, list: if canReadProject(projectId);
+      allow create: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.resource.data.ownerUid == request.auth.uid
+        && validProject(request.resource.data, projectId)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && existsAfter(/databases/$(database)/documents/projects/$(projectId)/members/$(request.auth.uid));
+      allow update: if isProjectOwner(projectId)
+        && request.resource.data.projectId == resource.data.projectId
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && validProject(request.resource.data, projectId)
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+
+      match /members/{uid} {
+        allow get, list: if canReadProject(projectId);
+        allow create: if request.auth != null
+          && ((isProjectOwner(projectId)
+              && uid != projectData(projectId).ownerUid
+              && validProjectMember(request.resource.data, uid, 'MEMBER'))
+            || (uid == request.auth.uid
+              && getAfter(/databases/$(database)/documents/projects/$(projectId)).data.ownerUid == request.auth.uid
+              && validProjectMember(request.resource.data, uid, 'OWNER')))
+          && request.resource.data.joinedAt == request.time;
+        allow update: if false;
+        allow delete: if isProjectOwner(projectId)
+          && uid != projectData(projectId).ownerUid;
+      }
+    }
+
+    /** Equipment metadata is readable only to signed-in students. All changes
+        are made through verified, transactional Server Actions. */
+    match /equipment/{equipmentId} {
+      allow get: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.matches('.*@ahduni\\.edu\\.in$');
+      allow list, create, update, delete: if false;
+    }
+
+    /** Project members can follow their project's active sessions and history.
+        Session writes are trusted-server-only so clients cannot spoof identity,
+        timestamps, project access, or equipment availability. */
+    match /equipmentUsage/{usageId} {
+      allow get, list: if resource.data.projectId is string
+        && canReadProject(resource.data.projectId);
+      allow create, update, delete: if false;
+    }
 
     /**
      * Registrations.

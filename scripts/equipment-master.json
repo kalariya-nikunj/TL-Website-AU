@@ -1,0 +1,159 @@
+[
+  {
+    "equipmentId": "bambu-lab-x1c",
+    "srNo": 1,
+    "name": "3D Printer",
+    "manufacturer": "Bambu",
+    "model": " Lab X1 C",
+    "detailsUrl": "https://bambulab.com/en-in/x1",
+    "type": "FDM printer",
+    "quantity": 1,
+    "description": "Consumable Link",
+    "currentStatus": "In Work"
+  },
+  {
+    "equipmentId": "creality-ender-3-v3",
+    "srNo": 2,
+    "name": "3D Printer",
+    "manufacturer": "Creality ",
+    "model": "Ender 3V3",
+    "detailsUrl": "https://www.creality.com/products/creality-ender-3-v3",
+    "type": "FDM printer",
+    "quantity": 1,
+    "description": "Consumable Link",
+    "currentStatus": "Out of work"
+  },
+  {
+    "equipmentId": "phrozen-sonic-mighty-12k",
+    "srNo": 3,
+    "name": "Resin 3D Printer",
+    "manufacturer": "Phrozen",
+    "model": "Sonic Mighty 12K",
+    "detailsUrl": "https://info.phrozen3d.com/products/sonic-mighty-12k",
+    "type": "SLA Printer",
+    "quantity": 1,
+    "description": "Consumable Link",
+    "currentStatus": "In Work"
+  },
+  {
+    "equipmentId": "creality-cr-scan-lizard",
+    "srNo": 4,
+    "name": "3D Scaner ",
+    "manufacturer": "Creality ",
+    "model": "CR-Scan Lizard",
+    "detailsUrl": "https://www.creality.com/products/creality-cr-scan-lizard-3d-scanner",
+    "type": "Scaner",
+    "quantity": 1,
+    "currentStatus": "In Work"
+  },
+  {
+    "equipmentId": "cricut-maker-3",
+    "srNo": 5,
+    "name": "Vinile cutter",
+    "manufacturer": "Cricut",
+    "model": "Cricut maker 3",
+    "detailsUrl": "https://cricut.com/en/cutting-machines/cricut-maker-3/2008335.html",
+    "type": "cutter",
+    "currentStatus": "In Work"
+  },
+  {
+    "equipmentId": "succes-stl43-co2-laser",
+    "srNo": 6,
+    "name": "CO2 LASER Cutter",
+    "manufacturer": "Succes ",
+    "model": "STL43",
+    "detailsUrl": "https://www.successtechno.com/stl43.html",
+    "type": "CO2",
+    "quantity": 1,
+    "description": "Consumable Link",
+    "currentStatus": "In Work",
+    "maintenancePartner": "Ravi Succes engineer",
+    "contact": "91 9586105309"
+  },
+  {
+    "equipmentId": "acrylic-bending-abm700-1300",
+    "srNo": 7,
+    "name": "Acrylic Bending Machin",
+    "model": "ABM700/1300",
+    "detailsUrl": "https://sign-making-tool.com/acrylic-bending-machine",
+    "quantity": 1,
+    "currentStatus": "In Work"
+  },
+  {
+    "equipmentId": "proxxon-thermocut-230e",
+    "srNo": 8,
+    "name": "Wired ThermoCutter",
+    "manufacturer": "Proxxon",
+    "model": "Thermocut 230/E",
+    "detailsUrl": "https://www.proxxon.com/en/micromot/27080.php",
+    "type": "Wire Thermocuter",
+    "quantity": 1,
+    "currentStatus": "In Work"
+  },
+  {
+    "equipmentId": "singer-4423",
+    "srNo": 9,
+    "name": "\nSewing Machine",
+    "manufacturer": "Singer",
+    "model": "4423",
+    "detailsUrl": "https://www.singer.com/products/singer-4423-heavy-duty-sewing-machine?srsltid=AfmBOop1kiNqWm6Bfj8EcvVopkqxNX7e9mMFmN1gXKkucJiGp0lU_Ljc",
+    "type": "Sewing Machine",
+    "quantity": 1,
+    "currentStatus": "In Work"
+  },
+  {
+    "equipmentId": "surya-s900-muffle-furnace",
+    "srNo": 10,
+    "name": "Muffle furnace",
+    "manufacturer": "Surya ",
+    "model": "S-900",
+    "detailsUrl": "https://www.johnsontools.in/products/johnson-tools-iron-surya-1kg-melting-furnace-furnace-for-gold-and-silver-jewelry-ivory-grey-color-premium-melting-machine-1-kg-melting-furnace?srsltid=AfmBOoomjbkRBYdCePOS9KozU0cISJJxNGnp7HVtofpk7s0tdFl2FIrD",
+    "type": "Metal melting ",
+    "quantity": 1,
+    "currentStatus": "In Work"
+  },
+  {
+    "equipmentId": "esskey-kl2-lathe",
+    "srNo": 11,
+    "name": "Lathe machine",
+    "manufacturer": "ESSKEY",
+    "model": "KL-2",
+    "quantity": 1,
+    "currentStatus": "In Work"
+  },
+  {
+    "equipmentId": "esskey-manual-sheet-bender",
+    "srNo": 12,
+    "name": "Manual Sheet bender",
+    "manufacturer": "ESSKEY",
+    "quantity": 1,
+    "currentStatus": "In Work"
+  },
+  {
+    "equipmentId": "cnc-milling-machine",
+    "srNo": 13,
+    "name": "CNC Milling Machine",
+    "manufacturer": "Made in TL-AU",
+    "quantity": 1,
+    "currentStatus": "Out of work"
+  },
+  {
+    "equipmentId": "insize-hdt-mve1300",
+    "srNo": 14,
+    "name": "Hardness Testing Machine",
+    "manufacturer": "Insize",
+    "model": "HDT-MVE1300",
+    "detailsUrl": "https://www.insize.com/PDF/HDT-MVE1300.pdf",
+    "quantity": 1,
+    "currentStatus": "In Work"
+  },
+  {
+    "equipmentId": "kpt-kc030l-air-compressor",
+    "srNo": 15,
+    "name": "Air Compresser",
+    "manufacturer": "KPT",
+    "model": "KC030L",
+    "detailsUrl": "https://www.kpt.co.in/power-tools/compressor/kco30l-compressor-30l",
+    "currentStatus": "In Work"
+  }
+]
