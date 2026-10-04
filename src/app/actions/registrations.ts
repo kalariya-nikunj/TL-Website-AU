@@ -6,7 +6,13 @@ import type { Registration } from "@/types";
 
 import { getEvent } from "@/content/events";
 import { adminDb } from "@/lib/firebase/admin";
-import { AuthError, requireUser, runAction, type ActionResult } from "@/lib/auth/verify";
+import {
+  AuthError,
+  requireUser,
+  runAction,
+  withAuthDiagnosticFirestoreRead,
+  type ActionResult,
+} from "@/lib/auth/verify";
 
 const COLLECTION = "registrations";
 
@@ -140,24 +146,26 @@ export async function listMyRegistrations(
   idToken: string | null,
 ): Promise<ActionResult<Registration[]>> {
   return runAction(async () => {
-    const user = await requireUser(idToken);
+    const user = await requireUser(idToken, "REGISTRATIONS_ACTION");
 
-    const snapshot = await adminDb()
-      .collection(COLLECTION)
-      .where("userId", "==", user.uid)
-      .get();
+    return withAuthDiagnosticFirestoreRead("REGISTRATIONS_ACTION", async () => {
+      const snapshot = await adminDb()
+        .collection(COLLECTION)
+        .where("userId", "==", user.uid)
+        .get();
 
-    const rows = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        ...data,
-        id: doc.id,
-        /* Firestore Timestamps are not serialisable across the Server Action
-           boundary — they arrive at the client as {} unless converted. */
-        createdAt: data.createdAt?.toDate().toISOString() ?? "",
-      } as Registration;
+      const rows = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          /* Firestore Timestamps are not serialisable across the Server Action
+             boundary — they arrive at the client as {} unless converted. */
+          createdAt: data.createdAt?.toDate().toISOString() ?? "",
+        } as Registration;
+      });
+
+      return rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     });
-
-    return rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   });
 }

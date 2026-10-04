@@ -13,7 +13,13 @@ import type {
 } from "@/types/user-projects";
 import { PROJECT_CATEGORIES } from "@/types/user-projects";
 import { adminDb } from "@/lib/firebase/admin";
-import { AuthError, requireUser, runAction, type ActionResult } from "@/lib/auth/verify";
+import {
+  AuthError,
+  requireUser,
+  runAction,
+  withAuthDiagnosticFirestoreRead,
+  type ActionResult,
+} from "@/lib/auth/verify";
 
 const PROJECT_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 const CATEGORIES = Object.keys(PROJECT_CATEGORIES);
@@ -143,34 +149,36 @@ export async function listMyProjects(
   idToken: string | null,
 ): Promise<ActionResult<Array<{ project: Project; isOwner: boolean }>>> {
   return runAction(async () => {
-    const user = await requireUser(idToken);
-    await requireCompleteProfile(user.uid);
-    const db = adminDb();
-    const [owned, memberships] = await Promise.all([
-      db.collection("projects").where("ownerUid", "==", user.uid).get(),
-      db.collectionGroup("members").where("uid", "==", user.uid).get(),
-    ]);
-    const ids = new Set<string>([
-      ...owned.docs.map((doc) => doc.id),
-      ...memberships.docs
-        .filter((doc) => doc.id === user.uid && ["OWNER", "MEMBER"].includes(String(doc.get("role"))))
-        .map((doc) => doc.ref.parent.parent?.id)
-        .filter((id): id is string => Boolean(id)),
-    ]);
-    const rows = await Promise.all([...ids].map(async (id) => {
-      const snapshot = await db.collection("projects").doc(id).get();
-      if (!snapshot.exists) return null;
-      const isOwner = snapshot.get("ownerUid") === user.uid;
-      const isMember = memberships.docs.some((member) =>
-        member.id === user.uid
-        && ["OWNER", "MEMBER"].includes(String(member.get("role")))
-        && member.ref.parent.parent?.id === id,
-      );
-      if (!isOwner && !isMember) return null;
-      return { project: serializeProject(snapshot.data()!, id), isOwner };
-    }));
-    return rows.filter((row): row is { project: Project; isOwner: boolean } => row !== null)
-      .sort((a, b) => b.project.updatedAt.localeCompare(a.project.updatedAt));
+    const user = await requireUser(idToken, "PROJECTS_ACTION");
+    return withAuthDiagnosticFirestoreRead("PROJECTS_ACTION", async () => {
+      await requireCompleteProfile(user.uid);
+      const db = adminDb();
+      const [owned, memberships] = await Promise.all([
+        db.collection("projects").where("ownerUid", "==", user.uid).get(),
+        db.collectionGroup("members").where("uid", "==", user.uid).get(),
+      ]);
+      const ids = new Set<string>([
+        ...owned.docs.map((doc) => doc.id),
+        ...memberships.docs
+          .filter((doc) => doc.id === user.uid && ["OWNER", "MEMBER"].includes(String(doc.get("role"))))
+          .map((doc) => doc.ref.parent.parent?.id)
+          .filter((id): id is string => Boolean(id)),
+      ]);
+      const rows = await Promise.all([...ids].map(async (id) => {
+        const snapshot = await db.collection("projects").doc(id).get();
+        if (!snapshot.exists) return null;
+        const isOwner = snapshot.get("ownerUid") === user.uid;
+        const isMember = memberships.docs.some((member) =>
+          member.id === user.uid
+          && ["OWNER", "MEMBER"].includes(String(member.get("role")))
+          && member.ref.parent.parent?.id === id,
+        );
+        if (!isOwner && !isMember) return null;
+        return { project: serializeProject(snapshot.data()!, id), isOwner };
+      }));
+      return rows.filter((row): row is { project: Project; isOwner: boolean } => row !== null)
+        .sort((a, b) => b.project.updatedAt.localeCompare(a.project.updatedAt));
+    });
   });
 }
 

@@ -4,7 +4,13 @@ import { FieldValue } from "firebase-admin/firestore";
 
 import type { UserProfile } from "@/types";
 import { adminDb } from "@/lib/firebase/admin";
-import { AuthError, requireUser, runAction, type ActionResult } from "@/lib/auth/verify";
+import {
+  AuthError,
+  requireUser,
+  runAction,
+  withAuthDiagnosticFirestoreRead,
+  type ActionResult,
+} from "@/lib/auth/verify";
 
 export type ProfileInput = {
   name: string;
@@ -38,9 +44,11 @@ export async function getMyProfile(
   idToken: string | null,
 ): Promise<ActionResult<UserProfile | null>> {
   return runAction(async () => {
-    const user = await requireUser(idToken);
-    const snapshot = await adminDb().collection("users").doc(user.uid).get();
-    return snapshot.exists ? serializeProfile(snapshot.data()!) : null;
+    const user = await requireUser(idToken, "PROFILE_ACTION");
+    return withAuthDiagnosticFirestoreRead("PROFILE_ACTION", async () => {
+      const snapshot = await adminDb().collection("users").doc(user.uid).get();
+      return snapshot.exists ? serializeProfile(snapshot.data()!) : null;
+    });
   });
 }
 
