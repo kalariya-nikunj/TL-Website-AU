@@ -3,3 +3,6 @@ allowBuilds:
   protobufjs: true
   sharp: true
   unrs-resolver: true
+
+overrides:
+  'jwks-rsa>jose': 4.15.9
