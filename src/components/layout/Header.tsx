@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sheet";
 import { Container } from "@/components/layout/Container";
 import { headerConfig, headerNav, headerWordmark, site } from "@/content/site";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import { cn } from "@/lib/utils";
 import type { TextToken } from "@/types";
 
@@ -73,7 +74,9 @@ type HeaderProps = {
 
 export function Header({ variant }: HeaderProps) {
   const pathname = usePathname();
+  const { user, loading: authLoading } = useAuth();
   const mode = variant ?? (pathname === "/" ? "over-hero" : "solid");
+  const showDashboard = !authLoading && Boolean(user);
 
   const [scrolled, setScrolled] = useState(false);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -260,6 +263,23 @@ export function Header({ variant }: HeaderProps) {
             <div className="hidden items-center gap-7 lg:flex">
               <nav aria-label="Main">
                 <ul className="flex items-center gap-7">
+                  {showDashboard && (
+                    <li>
+                      <Link
+                        href="/dashboard"
+                        onMouseEnter={scheduleClose}
+                        onFocus={scheduleClose}
+                        className={cn(
+                          "text-small font-medium transition-colors",
+                          navColor,
+                          UNDERLINE_BASE,
+                          underlineColor,
+                        )}
+                      >
+                        Dashboard
+                      </Link>
+                    </li>
+                  )}
                   {headerNav.map((item, index) => {
                     const isOpen = openIndex === index;
 
@@ -318,7 +338,12 @@ export function Header({ variant }: HeaderProps) {
               <AuthButton layout="desktop" onInteract={scheduleClose} />
             </div>
 
-            <MobileMenu open={mobileOpen} onOpenChange={setMobileOpen} tone={navColor} />
+            <MobileMenu
+              open={mobileOpen}
+              onOpenChange={setMobileOpen}
+              tone={navColor}
+              showDashboard={showDashboard}
+            />
           </div>
         </Container>
 
@@ -378,10 +403,12 @@ function MobileMenu({
   open,
   onOpenChange,
   tone,
+  showDashboard,
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
   tone: string;
+  showDashboard: boolean;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -400,6 +427,15 @@ function MobileMenu({
         </SheetHeader>
 
         <nav aria-label="Mobile" className="flex-1 overflow-y-auto px-4">
+          {showDashboard && (
+            <Link
+              href="/dashboard"
+              onClick={() => onOpenChange(false)}
+              className="flex h-12 items-center border-b border-border font-display text-base font-semibold text-ink transition-colors hover:text-primary"
+            >
+              Dashboard
+            </Link>
+          )}
           <Accordion type="single" collapsible>
             {headerNav.map((item) =>
               item.children ? (
