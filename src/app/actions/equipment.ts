@@ -4,6 +4,7 @@ import { FieldValue, type DocumentData } from "firebase-admin/firestore";
 
 import { adminDb } from "@/lib/firebase/admin";
 import { AuthError, requireUser, runAction, type ActionResult } from "@/lib/auth/verify";
+import { retryPendingEquipmentUsageSheetSync, syncEquipmentUsageToGoogleSheets } from "@/lib/equipment/usage-sheet-sync";
 import type { Equipment, EquipmentProjectOption, EquipmentUsage, EquipmentStatus, EquipmentUsageStatus } from "@/types/equipment";
 import masterRecords from "../../../scripts/equipment-master.json";
 
@@ -35,6 +36,8 @@ function serializeEquipment(data: DocumentData, equipmentId: string): Equipment 
     status: data.status as EquipmentStatus,
     isActive: data.isActive === true,
     ...(typeof data.activeUsageId === "string" ? { activeUsageId: data.activeUsageId } : {}),
+    ...(typeof data.lastUsageId === "string" ? { lastUsageId: data.lastUsageId } : {}),
+    usageCount: typeof data.usageCount === "number" ? data.usageCount : 0,
   };
 }
 
@@ -62,6 +65,7 @@ function serializeUsage(data: DocumentData, usageId: string): EquipmentUsage {
     status: data.status as EquipmentUsageStatus,
     startedAt: toIso(data.startedAt),
     ...(data.endedAt ? { endedAt: toIso(data.endedAt) } : {}),
+    ...(typeof data.usageNumber === "number" ? { usageNumber: data.usageNumber } : {}),
   };
 }
 
@@ -75,6 +79,47 @@ async function requireProfile(uid: string): Promise<DocumentData> {
     throw new AuthError("Complete your profile before using equipment.");
   }
   return snapshot.data()!;
+}
+
+async function releaseLegacyUsageLock(db: ReturnType<typeof adminDb>, equipmentId: string): Promise<void> {
+  const equipmentRef = db.collection("equipment").doc(equipmentId);
+  let releasedUsageId = "";
+  await db.runTransaction(async (transaction) => {
+    const equipment = await transaction.get(equipmentRef);
+    if (!equipment.exists || equipment.get("status") !== "IN_USE") return;
+
+    const activeUsageId = equipment.get("activeUsageId");
+    const usageId = typeof activeUsageId === "string" ? activeUsageId : "";
+    const usageRef = usageId ? db.collection("equipmentUsage").doc(usageId) : null;
+    const usage = usageRef ? await transaction.get(usageRef) : null;
+    const now = FieldValue.serverTimestamp();
+
+    if (usage?.exists && usage.get("status") === "ACTIVE") {
+      transaction.update(usageRef!, {
+        status: "RECORDED",
+        endReason: "LEGACY_LOCK_RELEASED_WITHOUT_END_TIME",
+        updatedAt: now,
+      });
+      transaction.set(db.collection("equipmentUsageSheetOutbox").doc(usageId), {
+        status: "PENDING",
+        version: FieldValue.increment(1),
+        updatedAt: now,
+      }, { merge: true });
+      releasedUsageId = usageId;
+    }
+
+    const nextStatus = equipment.get("isActive") !== true
+      ? "DISABLED"
+      : isSourceOutOfWork(equipment.get("currentStatus")) ? "MAINTENANCE" : "AVAILABLE";
+    transaction.update(equipmentRef, {
+      status: nextStatus,
+      activeUsageId: FieldValue.delete(),
+      ...(usage?.exists ? { lastUsageId: usageId } : {}),
+      updatedAt: now,
+    });
+  });
+  if (releasedUsageId) await syncEquipmentUsageToGoogleSheets(releasedUsageId, db);
+  await retryPendingEquipmentUsageSheetSync(db, releasedUsageId);
 }
 
 async function listAccessibleProjects(uid: string): Promise<EquipmentProjectOption[]> {
@@ -106,12 +151,13 @@ async function listAccessibleProjects(uid: string): Promise<EquipmentProjectOpti
 export async function getEquipmentPage(
   idToken: string | null,
   equipmentId: string,
-): Promise<ActionResult<{ equipment: Equipment; projects: EquipmentProjectOption[]; activeUsage: EquipmentUsage | null; seeded: boolean }>> {
+): Promise<ActionResult<{ equipment: Equipment; projects: EquipmentProjectOption[]; latestUsage: EquipmentUsage | null; seeded: boolean }>> {
   return runAction(async () => {
     const user = await requireUser(idToken);
     await requireProfile(user.uid);
     validateId(equipmentId, "equipment");
     const db = adminDb();
+    await releaseLegacyUsageLock(db, equipmentId);
     const equipmentSnapshot = await db.collection("equipment").doc(equipmentId).get();
     const masterRecord = EQUIPMENT_MASTER.find((record) => record.equipmentId === equipmentId);
     if (!equipmentSnapshot.exists && !masterRecord) throw new AuthError("Equipment not found.");
@@ -120,19 +166,21 @@ export async function getEquipmentPage(
       : serializeMasterEquipment(masterRecord!);
     const seeded = equipmentSnapshot.exists;
     const projects = await listAccessibleProjects(user.uid);
-    const activeUsageId = equipmentSnapshot.get("activeUsageId");
-    let activeUsage: EquipmentUsage | null = null;
-    if (seeded && typeof activeUsageId === "string") {
-      const usageSnapshot = await db.collection("equipmentUsage").doc(activeUsageId).get();
-      if (usageSnapshot.exists && usageSnapshot.get("status") === "ACTIVE") {
+    const lastUsageId = typeof equipmentSnapshot.get("lastUsageId") === "string"
+      ? equipmentSnapshot.get("lastUsageId")
+      : equipmentSnapshot.get("activeUsageId");
+    let latestUsage: EquipmentUsage | null = null;
+    if (seeded && typeof lastUsageId === "string") {
+      const usageSnapshot = await db.collection("equipmentUsage").doc(lastUsageId).get();
+      if (usageSnapshot.exists) {
         const usageData = usageSnapshot.data()!;
         const sameProject = projects.some((project) => project.projectId === usageData.projectId);
         if (sameProject || usageData.userUid === user.uid) {
-          activeUsage = serializeUsage(usageData, usageSnapshot.id);
+          latestUsage = serializeUsage(usageData, usageSnapshot.id);
         }
       }
     }
-    return { equipment, projects, activeUsage, seeded };
+    return { equipment, projects, latestUsage, seeded };
   });
 }
 
@@ -142,7 +190,12 @@ export async function listEquipment(
   return runAction(async () => {
     const user = await requireUser(idToken);
     await requireProfile(user.uid);
-    const snapshot = await adminDb().collection("equipment").get();
+    const db = adminDb();
+    const initialSnapshot = await db.collection("equipment").get();
+    await Promise.all(initialSnapshot.docs
+      .filter((document) => document.get("status") === "IN_USE")
+      .map((document) => releaseLegacyUsageLock(db, document.id)));
+    const snapshot = await db.collection("equipment").get();
     const persisted = new Map(snapshot.docs.map((document) => [document.id, document.data()]));
     return EQUIPMENT_MASTER
       .map((record) => persisted.has(record.equipmentId)
@@ -168,6 +221,8 @@ export async function startEquipmentUsage(
     const projectRef = db.collection("projects").doc(projectId);
     const memberRef = projectRef.collection("members").doc(user.uid);
     const usageRef = db.collection("equipmentUsage").doc();
+    const sheetOutboxRef = db.collection("equipmentUsageSheetOutbox").doc(usageRef.id);
+    let legacyUsageIdToSync = "";
 
     await db.runTransaction(async (transaction) => {
       const [equipment, project, member] = await Promise.all([
@@ -185,7 +240,24 @@ export async function startEquipmentUsage(
         || equipment.get("status") === "MAINTENANCE" || equipment.get("status") === "DISABLED") {
         throw new AuthError("This equipment is currently unavailable.");
       }
-      if (equipment.get("status") !== "AVAILABLE") throw new AuthError("This equipment is currently in use.");
+      if (equipment.get("status") !== "AVAILABLE" && equipment.get("status") !== "IN_USE") {
+        throw new AuthError("This equipment is currently unavailable.");
+      }
+
+      const legacyUsageId = equipment.get("status") === "IN_USE" && typeof equipment.get("activeUsageId") === "string"
+        ? String(equipment.get("activeUsageId"))
+        : "";
+      legacyUsageIdToSync = legacyUsageId;
+      const legacyUsageRef = legacyUsageId ? db.collection("equipmentUsage").doc(legacyUsageId) : null;
+      const legacyUsage = legacyUsageRef ? await transaction.get(legacyUsageRef) : null;
+      let priorUsageCount = typeof equipment.get("usageCount") === "number"
+        ? Number(equipment.get("usageCount"))
+        : 0;
+      if (typeof equipment.get("usageCount") !== "number") {
+        const priorUsage = await transaction.get(db.collection("equipmentUsage").where("equipmentId", "==", equipmentId));
+        priorUsageCount = priorUsage.size;
+      }
+      const nextUsageCount = priorUsageCount + 1;
 
       const now = FieldValue.serverTimestamp();
       transaction.create(usageRef, {
@@ -196,18 +268,39 @@ export async function startEquipmentUsage(
         userName: String(profile.name ?? ""),
         projectId,
         projectTitle: String(project.get("title") ?? ""),
-        status: "ACTIVE",
+        status: "RECORDED",
         startedAt: now,
+        usageNumber: nextUsageCount,
         createdAt: now,
         updatedAt: now,
       });
+      transaction.create(sheetOutboxRef, { status: "PENDING", version: 1, attempts: 0, updatedAt: now });
+      if (legacyUsageRef && legacyUsage?.exists && legacyUsage.get("status") === "ACTIVE") {
+        transaction.update(legacyUsageRef, {
+          status: "RECORDED",
+          endReason: "LEGACY_LOCK_RELEASED_WITHOUT_END_TIME",
+          updatedAt: now,
+        });
+        transaction.set(db.collection("equipmentUsageSheetOutbox").doc(legacyUsageId), {
+          status: "PENDING",
+          version: FieldValue.increment(1),
+          updatedAt: now,
+        }, { merge: true });
+      }
       transaction.update(equipmentRef, {
-        status: "IN_USE",
-        activeUsageId: usageRef.id,
+        status: equipment.get("status") === "IN_USE"
+          ? (isSourceOutOfWork(equipment.get("currentStatus")) ? "MAINTENANCE" : "AVAILABLE")
+          : equipment.get("status"),
+        activeUsageId: FieldValue.delete(),
+        lastUsageId: usageRef.id,
+        usageCount: nextUsageCount,
         updatedAt: now,
       });
     });
 
+    if (legacyUsageIdToSync) await syncEquipmentUsageToGoogleSheets(legacyUsageIdToSync, db);
+    await syncEquipmentUsageToGoogleSheets(usageRef.id, db);
+    await retryPendingEquipmentUsageSheetSync(db, usageRef.id);
     const saved = await usageRef.get();
     return serializeUsage(saved.data()!, usageRef.id);
   });
@@ -222,6 +315,7 @@ export async function endEquipmentUsage(
     validateId(usageId, "usage session");
     const db = adminDb();
     const usageRef = db.collection("equipmentUsage").doc(usageId);
+    const sheetOutboxRef = db.collection("equipmentUsageSheetOutbox").doc(usageId);
 
     await db.runTransaction(async (transaction) => {
       const usage = await transaction.get(usageRef);
@@ -239,13 +333,23 @@ export async function endEquipmentUsage(
 
       const now = FieldValue.serverTimestamp();
       const nextEquipmentStatus = isSourceOutOfWork(equipment.get("currentStatus")) ? "MAINTENANCE" : "AVAILABLE";
-      transaction.update(usageRef, { status: "COMPLETED", endedAt: now, updatedAt: now });
+      transaction.update(usageRef, {
+        status: "COMPLETED",
+        endedAt: now,
+        endedByUid: user.uid,
+        endedByEmail: user.email ?? "",
+        endReason: "STUDENT_ENDED",
+        updatedAt: now,
+      });
+      transaction.set(sheetOutboxRef, { status: "PENDING", version: FieldValue.increment(1), updatedAt: now }, { merge: true });
       transaction.update(equipmentRef, {
         status: nextEquipmentStatus,
         activeUsageId: FieldValue.delete(),
         updatedAt: now,
       });
     });
+    await syncEquipmentUsageToGoogleSheets(usageId, db);
+    await retryPendingEquipmentUsageSheetSync(db, usageId);
     return undefined;
   });
 }

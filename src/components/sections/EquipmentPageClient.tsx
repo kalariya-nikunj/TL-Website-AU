@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
-import { endEquipmentUsage, getEquipmentPage, startEquipmentUsage } from "@/app/actions/equipment";
+import { getEquipmentPage, startEquipmentUsage } from "@/app/actions/equipment";
 import { StatusMessage } from "@/components/feedback/StatusMessage";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { formatTime } from "@/lib/format";
 import type { Equipment, EquipmentProjectOption, EquipmentUsage } from "@/types/equipment";
 
 type EquipmentPageClientProps = { equipmentId: string; equipmentUrl: string };
@@ -16,7 +17,7 @@ export function EquipmentPageClient({ equipmentId, equipmentUrl }: EquipmentPage
   const { user, loading, getIdToken } = useAuth();
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [projects, setProjects] = useState<EquipmentProjectOption[]>([]);
-  const [activeUsage, setActiveUsage] = useState<EquipmentUsage | null>(null);
+  const [latestUsage, setLatestUsage] = useState<EquipmentUsage | null>(null);
   const [seeded, setSeeded] = useState(false);
   const [projectId, setProjectId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -31,7 +32,7 @@ export function EquipmentPageClient({ equipmentId, equipmentUrl }: EquipmentPage
     setError("");
     setEquipment(result.data.equipment);
     setProjects(result.data.projects);
-    setActiveUsage(result.data.activeUsage);
+    setLatestUsage(result.data.latestUsage);
     setSeeded(result.data.seeded);
   }, [equipmentId, getIdToken]);
 
@@ -49,25 +50,13 @@ export function EquipmentPageClient({ equipmentId, equipmentUrl }: EquipmentPage
       await refresh();
       return;
     }
-    setActiveUsage(result.data);
-    setEquipment((current) => current ? { ...current, status: "IN_USE" } : current);
-  }
-
-  async function end() {
-    if (!activeUsage) return;
-    setBusy(true);
-    setError("");
-    const result = await endEquipmentUsage(await getIdToken(), activeUsage.usageId);
-    setBusy(false);
-    if (!result.ok) {
-      setError(result.error);
-      await refresh();
-      return;
-    }
-    setActiveUsage(null);
+    setLatestUsage(result.data);
     setEquipment((current) => current ? {
       ...current,
-      status: current.currentStatus?.trim().toLowerCase() === "out of work" ? "MAINTENANCE" : "AVAILABLE",
+      status: current.status === "IN_USE" ? "AVAILABLE" : current.status,
+      activeUsageId: undefined,
+      lastUsageId: result.data.usageId,
+      usageCount: result.data.usageNumber ?? (current.usageCount ?? 0) + 1,
     } : current);
   }
 
@@ -85,7 +74,6 @@ export function EquipmentPageClient({ equipmentId, equipmentUrl }: EquipmentPage
 
   const unavailable = equipment.status === "MAINTENANCE" || equipment.status === "DISABLED" || !equipment.isActive;
   const inUse = equipment.status === "IN_USE";
-  const canEnd = activeUsage?.userUid === user.uid;
 
   return (
     <div className="grid max-w-4xl gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
@@ -99,6 +87,7 @@ export function EquipmentPageClient({ equipmentId, equipmentUrl }: EquipmentPage
           <EquipmentValue label="Quantity" value={equipment.quantity?.toString()} />
           <EquipmentValue label="Current status" value={equipment.currentStatus} />
           <EquipmentValue label="Live status" value={inUse ? "IN_USE" : equipment.status} />
+          <EquipmentValue label="Recorded uses" value={String(equipment.usageCount ?? 0)} />
           <EquipmentValue label="Sr No." value={equipment.srNo?.toString()} />
           <EquipmentValue label="Maintenance partner" value={equipment.maintenancePartner} />
           <EquipmentValue label="Contact" value={equipment.contact} />
@@ -114,14 +103,15 @@ export function EquipmentPageClient({ equipmentId, equipmentUrl }: EquipmentPage
           {inUse ? "IN USE" : unavailable ? "UNAVAILABLE" : "AVAILABLE"}
         </p>
 
-        {inUse && activeUsage && (
+        {latestUsage && (
           <div className="mt-5 rounded-lg border border-border p-4">
-            <p className="font-medium text-ink">Project: {activeUsage.projectTitle}</p>
-            <p className="mt-1 text-small text-muted">Used by: {activeUsage.userName}</p>
-            <p className="mt-1 text-small text-muted">Started: {formatTime(activeUsage.startedAt)}</p>
+            <p className="font-medium text-ink">Last recorded use{latestUsage.usageNumber ? ` #${latestUsage.usageNumber}` : ""}</p>
+            <p className="mt-1 text-small text-muted">Project: {latestUsage.projectTitle}</p>
+            <p className="mt-1 text-small text-muted">Used by: {latestUsage.userName}</p>
+            <p className="mt-1 text-small text-muted">At: {formatTime(latestUsage.startedAt)}</p>
           </div>
         )}
-        {inUse && !activeUsage && <p className="mt-4 text-small text-muted">This equipment is currently in use. Please wait until the session ends.</p>}
+        {inUse && <p className="mt-4 text-small text-muted">This record is being refreshed. You can record another use without ending a previous session.</p>}
 
         {!seeded && <StatusMessage status="warning" className="mt-5">This equipment record has not been seeded in Firestore yet. Usage is disabled until then.</StatusMessage>}
 
@@ -148,11 +138,6 @@ export function EquipmentPageClient({ equipmentId, equipmentUrl }: EquipmentPage
             )}
           </div>
         )}
-        {canEnd && (
-          <Button variant="outline" className="mt-5 w-full sm:w-auto" disabled={busy} onClick={() => void end()}>
-            {busy ? "Ending…" : "End Usage"}
-          </Button>
-        )}
         {error && <StatusMessage status="error" className="mt-5">{error}</StatusMessage>}
         <Button asChild variant="link" className="mt-5 px-0"><Link href="/equipment">All equipment</Link></Button>
       </section>
@@ -178,9 +163,4 @@ function EquipmentValue({ label, value }: { label: string; value?: string }) {
       <dd className="mt-0.5 font-medium text-ink">{value || "Not listed in source"}</dd>
     </div>
   );
-}
-
-function formatTime(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "Time unavailable" : new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(date);
 }

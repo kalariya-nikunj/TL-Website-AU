@@ -1,5 +1,5 @@
 export type EquipmentStatus = "AVAILABLE" | "IN_USE" | "MAINTENANCE" | "DISABLED";
-export type EquipmentUsageStatus = "ACTIVE" | "COMPLETED";
+export type EquipmentUsageStatus = "ACTIVE" | "COMPLETED" | "RECORDED";
 
 export type Equipment = {
   equipmentId: string;
@@ -18,6 +18,8 @@ export type Equipment = {
   status: EquipmentStatus;
   isActive: boolean;
   activeUsageId?: string;
+  lastUsageId?: string;
+  usageCount?: number;
 };
 
 /** Firestore timestamps are serialized to ISO strings before reaching the client. */
@@ -32,6 +34,7 @@ export type EquipmentUsage = {
   status: EquipmentUsageStatus;
   startedAt: string;
   endedAt?: string;
+  usageNumber?: number;
 };
 
 export type EquipmentProjectOption = { projectId: string; title: string };

@@ -60,6 +60,7 @@ export function EquipmentDirectory() {
             </span>
           </div>
           <p className="mt-3 text-small text-muted">Current status: {item.currentStatus || "Not listed in source"}</p>
+          <p className="mt-2 text-small text-muted">Recorded uses: {item.usageCount ?? 0}</p>
           <p className="mt-2 break-all text-xs text-muted">Equipment ID: {item.equipmentId}</p>
           <Button asChild variant="outline" className="mt-4">
             <Link href={`/equipment/${encodeURIComponent(item.equipmentId)}`}>View equipment &amp; QR</Link>

@@ -97,6 +97,29 @@ pnpm build
 
 A failing build is a failing deploy. Run this before opening a pull request.
 
+### Equipment usage records and Google Sheets
+
+Equipment usage stays in Firestore as the source of truth. To mirror new and
+updated records to Google Sheets, deploy `scripts/equipment-usage-sheets.gs` as
+a Google Apps Script Web App and set its Script Properties `SPREADSHEET_ID` and
+`SYNC_SECRET`. The script creates an `Equipment Usage` tab and updates rows by
+Usage ID, so retries do not create duplicate records.
+
+Use spreadsheet ID `1RA_C7jv8RS5mfyn936FQiIVFzZcYZ9u1YvLTFhrGs2Y` from the latest
+Sheet URL provided for `SPREADSHEET_ID`.
+
+Set these values in local `.env.local` and the Vercel project environment:
+
+```text
+EQUIPMENT_USAGE_SHEETS_WEBHOOK_URL=<deployed Apps Script /exec URL>
+EQUIPMENT_USAGE_SHEETS_SECRET=<same secret as the Apps Script property>
+```
+
+Keep the shared secret private. Equipment usage creates a record rather than
+holding the machine in an `IN_USE` state until someone ends a session. A
+student-facing equipment page has no End Usage button. If a webhook is
+temporarily unavailable, its outbox entry remains queued in Firestore.
+
 ---
 
 ## Scripts

@@ -13,11 +13,24 @@ export function formatDate(iso: string): string {
 
 /** "10:00 am" */
 export function formatTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "Time unavailable";
   return new Intl.DateTimeFormat(LOCALE, {
     hour: "numeric",
     minute: "2-digit",
     timeZone: TIME_ZONE,
-  }).format(new Date(iso));
+  }).format(date);
+}
+
+/** "14 August 2026, 10:00 am" in the lab's local timezone. */
+export function formatDateTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "Time unavailable";
+  return new Intl.DateTimeFormat(LOCALE, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: TIME_ZONE,
+  }).format(date);
 }
 
 /**
