@@ -67,7 +67,7 @@ export function AuthButton({ layout, onInteract }: AuthButtonProps) {
         className={cn(isMobile && "w-full")}
       >
         <Link
-          href="/my-registrations"
+          href="/profile"
           onFocus={onInteract}
           onClick={onInteract}
         >

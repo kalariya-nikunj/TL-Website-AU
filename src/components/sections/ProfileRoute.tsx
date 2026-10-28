@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
-type ProfileRouteProps = { page: "onboarding" | "dashboard" };
+type ProfileRouteProps = { page: "onboarding" | "profile" };
 type LoadState = "loading" | "ready" | "error";
 const DEPARTMENTS = [
   "Computer Science and Engineering",
@@ -45,7 +45,7 @@ export function ProfileRoute({ page }: ProfileRouteProps) {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.replace(`/login?next=/${page}`);
+      router.replace(`/login?next=${page === "profile" ? "/profile" : "/onboarding"}`);
       return;
     }
     let cancelled = false;
@@ -66,8 +66,8 @@ export function ProfileRoute({ page }: ProfileRouteProps) {
 
   useEffect(() => {
     if (state !== "ready") return;
-    if (page === "dashboard" && !profile) router.replace("/onboarding");
-    if (page === "onboarding" && profile?.profileCompleted) router.replace("/dashboard");
+    if (page === "profile" && !profile) router.replace("/onboarding");
+    if (page === "onboarding" && profile?.profileCompleted) router.replace("/profile");
   }, [page, profile, router, state]);
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -91,7 +91,7 @@ export function ProfileRoute({ page }: ProfileRouteProps) {
         return;
       }
       setProfile(result.data);
-      router.replace("/dashboard");
+      router.replace("/profile");
     });
   }
 

@@ -5,16 +5,16 @@ import { ProfileRoute } from "@/components/sections/ProfileRoute";
 import { Section } from "@/components/sections/Section";
 
 export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Your Tinkerers Lab profile dashboard.",
+  title: "Profile",
+  description: "Your Tinkerers Lab profile and projects.",
 };
 
-export default function DashboardPage() {
+export default function ProfilePage() {
   return (
     <>
-      <PageHeader title="Dashboard" description="Your Tinkerers Lab account and profile." />
+      <PageHeader title="Your profile" description="Your Tinkerers Lab account and profile." />
       <Section>
-        <ProfileRoute page="dashboard" />
+        <ProfileRoute page="profile" />
       </Section>
     </>
   );

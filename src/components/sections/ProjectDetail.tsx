@@ -102,7 +102,7 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
     return (
       <div className="flex max-w-xl flex-col items-start gap-4">
         <StatusMessage status="error">{error || "Project not found or you do not have access."}</StatusMessage>
-        <Button asChild variant="outline"><Link href="/dashboard">Back to dashboard</Link></Button>
+        <Button asChild variant="outline"><Link href="/profile">Back to profile</Link></Button>
       </div>
     );
   }
