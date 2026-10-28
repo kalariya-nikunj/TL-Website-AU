@@ -29,6 +29,21 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
 
   const fetchProject = useCallback(async () => getProject(await getIdToken(), projectId), [getIdToken, projectId]);
 
+  const searchMembers = useCallback(async (term: string) => {
+    setSearching(true);
+    const result = await searchProjectMembers(await getIdToken(), projectId, term);
+    setSearching(false);
+    if (!result.ok) {
+      setError(result.error);
+      setResults(null);
+      setNotice("");
+    } else {
+      setError("");
+      setResults(result.data);
+      setNotice(result.data.length === 0 ? "No matching users found." : "");
+    }
+  }, [getIdToken, projectId]);
+
   useEffect(() => {
     if (loading) return;
     let cancelled = false;
@@ -51,6 +66,35 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
     return () => { cancelled = true; };
   }, [fetchProject, loading, projectId, user]);
 
+  useEffect(() => {
+    const term = search.trim();
+    if (!view?.viewerIsOwner || term.length < 2) return;
+
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void (async () => {
+        setSearching(true);
+        const result = await searchProjectMembers(await getIdToken(), projectId, term);
+        if (cancelled) return;
+        setSearching(false);
+        if (!result.ok) {
+          setError(result.error);
+          setResults(null);
+          setNotice("");
+        } else {
+          setError("");
+          setResults(result.data);
+          setNotice(result.data.length === 0 ? "No matching users found." : "");
+        }
+      })();
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [getIdToken, projectId, search, view?.viewerIsOwner]);
+
   async function refreshProject() {
     const result = await fetchProject();
     if (!result.ok) setError(result.error);
@@ -59,18 +103,7 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
 
   async function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSearching(true);
-    setError("");
-    setNotice("");
-    const result = await searchProjectMembers(await getIdToken(), projectId, search);
-    setSearching(false);
-    if (!result.ok) {
-      setError(result.error);
-      setResults(null);
-    } else {
-      setResults(result.data);
-      if (result.data.length === 0) setNotice("No matching users found.");
-    }
+    if (search.trim().length >= 2) await searchMembers(search.trim());
   }
 
   async function addMember(candidate: ProjectMemberCandidate) {
@@ -235,24 +268,33 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
                 <label htmlFor="member-search" className="text-small font-medium text-ink">Add team member</label>
                 <p className="mt-1 text-small text-muted">Search by name, university email, or enrollment number.</p>
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                  <Input id="member-search" minLength={2} maxLength={100} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search existing users" />
+                  <Input id="member-search" role="combobox" aria-autocomplete="list" aria-expanded={Boolean(results?.length)} aria-controls="member-search-suggestions" minLength={2} maxLength={100} value={search} onChange={(event) => {
+                    const value = event.target.value;
+                    setSearch(value);
+                    if (value.trim().length < 2) {
+                      setResults(null);
+                      setSearching(false);
+                      setNotice("");
+                    }
+                  }} placeholder="Search by name, university email, or enrollment number" />
                   <Button type="submit" variant="outline" disabled={searching || search.trim().length < 2}>
                     {searching ? "Searching…" : "Search"}
                   </Button>
                 </div>
+                {searching && <p role="status" className="mt-3 text-xs text-muted">Searching…</p>}
                 {notice && <StatusMessage status="success" className="mt-4">{notice}</StatusMessage>}
                 {error && <StatusMessage status="error" className="mt-4">{error}</StatusMessage>}
                 {results && results.length > 0 && (
-                  <ul className="mt-4 divide-y divide-border rounded-lg border border-border px-4">
+                  <ul id="member-search-suggestions" role="listbox" aria-label="Matching users" className="mt-3 divide-y divide-border rounded-lg border border-border bg-surface px-4">
                     {results.map((candidate) => (
-                      <li key={candidate.uid} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                        <div>
-                          <p className="font-medium text-ink">{candidate.name}</p>
-                          <p className="text-small text-muted">{candidate.email}</p>
-                        </div>
-                        <Button type="button" size="sm" disabled={Boolean(memberPending)} onClick={() => void addMember(candidate)}>
-                          {memberPending === candidate.uid ? "Adding…" : "Add"}
-                        </Button>
+                      <li key={candidate.uid} role="none">
+                        <button type="button" role="option" aria-selected="false" disabled={Boolean(memberPending)} onClick={() => void addMember(candidate)} className="flex w-full flex-wrap items-center justify-between gap-3 py-3 text-left hover:text-primary disabled:opacity-50">
+                          <span>
+                            <span className="block font-medium text-ink">{candidate.name}</span>
+                            <span className="block text-small text-muted">{candidate.email}</span>
+                          </span>
+                          <span className="text-small font-medium text-primary">{memberPending === candidate.uid ? "Adding…" : "Add"}</span>
+                        </button>
                       </li>
                     ))}
                   </ul>

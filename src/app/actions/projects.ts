@@ -364,28 +364,45 @@ export async function searchProjectMembers(
     const term = typeof search === "string" ? search.trim() : "";
     if (term.length < 2 || term.length > 100) throw new AuthError("Enter at least 2 characters to search.");
     const users = adminDb().collection("users");
-    const variants = [...new Set([term, term.toLowerCase(), term.toUpperCase(), term[0].toUpperCase() + term.slice(1).toLowerCase()])];
-    const searches = [
-      ...variants.map((value) => users.where("name", ">=", value).where("name", "<=", `${value}\uf8ff`).limit(10).get()),
-      users.where("email", ">=", term.toLowerCase()).where("email", "<=", `${term.toLowerCase()}\uf8ff`).limit(10).get(),
-      users.where("enrollmentNumber", ">=", term.toUpperCase()).where("enrollmentNumber", "<=", `${term.toUpperCase()}\uf8ff`).limit(10).get(),
-    ];
-    const snapshots = await Promise.all(searches);
+    const prefixSearch = (field: "name" | "email" | "enrollmentNumber", value: string) =>
+      users.where(field, ">=", value).where(field, "<=", `${value}\uf8ff`).limit(50).get();
+    const nameVariants = [...new Set([term, term.toLowerCase(), term.toUpperCase(), term[0].toUpperCase() + term.slice(1).toLowerCase()])];
+    const emailVariants = [...new Set([term.toLowerCase(), term.toUpperCase()])];
+    const enrollmentVariants = [...new Set([term.toUpperCase(), term])];
+    /* Put identifier searches first so a common name prefix cannot push a
+       direct email or enrollment match out of the suggestion limit. */
+    const [emailSnapshots, enrollmentSnapshots, nameSnapshots] = await Promise.all([
+      Promise.all(emailVariants.map((value) => prefixSearch("email", value))),
+      Promise.all(enrollmentVariants.map((value) => prefixSearch("enrollmentNumber", value))),
+      Promise.all(nameVariants.map((value) => prefixSearch("name", value))),
+    ]);
     const existing = await projectRef.collection("members").get();
     const excluded = new Set([user.uid, ...existing.docs.map((doc) => doc.id)]);
-    const found = new Map<string, ProjectMemberCandidate>();
-    for (const snapshot of snapshots) {
+    const found = new Map<string, { candidate: ProjectMemberCandidate; rank: number }>();
+    const normalizedTerm = term.toLocaleLowerCase("en-US");
+    const snapshots = [...emailSnapshots, ...enrollmentSnapshots, ...nameSnapshots];
+    for (const [queryIndex, snapshot] of snapshots.entries()) {
       for (const doc of snapshot.docs) {
         const data = doc.data();
         if (excluded.has(doc.id) || data.profileCompleted !== true || data.uid !== doc.id) continue;
-        found.set(doc.id, {
-          uid: doc.id,
-          name: String(data.name ?? ""),
-          email: String(data.email ?? ""),
-        });
+        const email = String(data.email ?? "");
+        const name = String(data.name ?? "");
+        const enrollmentNumber = String(data.enrollmentNumber ?? "");
+        const rank = [email, enrollmentNumber].some((value) => value.trim().toLocaleLowerCase("en-US") === normalizedTerm)
+          ? 0
+          : queryIndex < emailSnapshots.length + enrollmentSnapshots.length
+            ? 1
+            : 2;
+        const current = found.get(doc.id);
+        if (!current || rank < current.rank) {
+          found.set(doc.id, { candidate: { uid: doc.id, name, email }, rank });
+        }
       }
     }
-    return [...found.values()].slice(0, 10);
+    return [...found.values()]
+      .sort((a, b) => a.rank - b.rank || a.candidate.name.localeCompare(b.candidate.name))
+      .slice(0, 10)
+      .map(({ candidate }) => candidate);
   });
 }
 
