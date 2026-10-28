@@ -36,6 +36,9 @@ function serializeProject(data: DocumentData, projectId: string): Project {
   const optional = (field: string) => typeof data[field] === "string" && data[field].trim()
     ? { [field]: data[field] as string }
     : {};
+  const optionalList = (field: string) => Array.isArray(data[field])
+    ? { [field]: data[field].filter((item: unknown): item is string => typeof item === "string" && Boolean(item.trim())).slice(0, 10) }
+    : {};
   return {
     projectId,
     title: String(data.title ?? ""),
@@ -51,6 +54,15 @@ function serializeProject(data: DocumentData, projectId: string): Project {
     ...optional("contactEmail"),
     ...optional("contactPhone"),
     ...optional("instagramUrl"),
+    ...optional("award"),
+    ...optional("duration"),
+    ...optional("sourceCodeUrl"),
+    ...optional("demoUrl"),
+    ...optionalList("images"),
+    ...optionalList("facilitiesUsed"),
+    ...optionalList("materials"),
+    ...optionalList("tags"),
+    ...optionalList("externalTeam"),
     createdAt: toIso(data.createdAt),
     updatedAt: toIso(data.updatedAt),
   };
@@ -98,6 +110,10 @@ function validateProjectInput(input: ProjectInput, creating: boolean) {
     contactEmail: input.contactEmail,
     contactPhone: input.contactPhone,
     instagramUrl: input.instagramUrl,
+    award: input.award,
+    duration: input.duration,
+    sourceCodeUrl: input.sourceCodeUrl,
+    demoUrl: input.demoUrl,
   };
   const optional: Record<string, string> = {};
   for (const [key, raw] of Object.entries(fields)) {
@@ -116,6 +132,38 @@ function validateProjectInput(input: ProjectInput, creating: boolean) {
       throw new AuthError("Enter a valid Instagram URL beginning with https://www.instagram.com/.");
     }
   }
+  for (const field of ["sourceCodeUrl", "demoUrl"] as const) {
+    if (!optional[field]) continue;
+    try {
+      const url = new URL(optional[field]);
+      if (url.protocol !== "https:") throw new Error();
+    } catch {
+      throw new AuthError(`Enter a valid HTTPS URL for ${field === "sourceCodeUrl" ? "source code" : "demo"}.`);
+    }
+  }
+  const lists = {
+    images: input.images,
+    facilitiesUsed: input.facilitiesUsed,
+    materials: input.materials,
+    tags: input.tags,
+    externalTeam: input.externalTeam,
+  };
+  const optionalLists: Record<string, string[]> = {};
+  for (const [key, raw] of Object.entries(lists)) {
+    if (raw === undefined) continue;
+    if (!Array.isArray(raw) || raw.length > 10 || raw.some((item) => typeof item !== "string")) {
+      throw new AuthError(`${key} must contain up to 10 entries.`);
+    }
+    const values = raw.map((item) => item.trim()).filter(Boolean);
+    if (values.some((item) => item.length > 200)) throw new AuthError(`Each ${key} entry must be 200 characters or fewer.`);
+    if (key === "images") {
+      for (const item of values) {
+        if (item.startsWith("/images/") && !item.includes("..") && !item.includes("\\")) continue;
+        throw new AuthError("Project images must be local paths beginning with /images/.");
+      }
+    }
+    if (values.length) optionalLists[key] = values;
+  }
   return {
     title,
     slug: slugify(title),
@@ -124,6 +172,7 @@ function validateProjectInput(input: ProjectInput, creating: boolean) {
     description,
     status: status as ProjectStatus,
     ...optional,
+    ...optionalLists,
   };
 }
 
@@ -257,7 +306,7 @@ export async function updateProject(
     requireProjectId(projectId);
     const db = adminDb();
     const ref = db.collection("projects").doc(projectId);
-    const optionalFields = ["department", "branch", "professorName", "contactEmail", "contactPhone", "instagramUrl"] as const;
+    const optionalFields = ["department", "branch", "professorName", "contactEmail", "contactPhone", "instagramUrl", "award", "duration", "sourceCodeUrl", "demoUrl", "images", "facilitiesUsed", "materials", "tags", "externalTeam"] as const;
     const clearMissing = Object.fromEntries(
       optionalFields.filter((field) => !(field in fields)).map((field) => [field, FieldValue.delete()]),
     );

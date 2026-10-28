@@ -13,8 +13,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { PROJECT_CATEGORIES, type ProjectCategory, type ProjectInput, type ProjectStatus } from "@/types/user-projects";
 
-type ProjectFormProps = { projectId?: string };
-type FormState = Omit<ProjectInput, "category" | "status">;
+type ProjectFormProps = { projectId?: string; variant?: "create" | "edit" };
+type FormState = Omit<ProjectInput, "category" | "status" | "images" | "facilitiesUsed" | "materials" | "tags" | "externalTeam"> & {
+  imagesText: string;
+  facilitiesUsedText: string;
+  materialsText: string;
+  tagsText: string;
+  externalTeamText: string;
+};
 type LoadState = "loading" | "ready" | "error";
 
 const EMPTY_FORM: FormState = {
@@ -27,9 +33,18 @@ const EMPTY_FORM: FormState = {
   contactEmail: "",
   contactPhone: "",
   instagramUrl: "",
+  imagesText: "",
+  facilitiesUsedText: "",
+  materialsText: "",
+  tagsText: "",
+  externalTeamText: "",
+  award: "",
+  duration: "",
+  sourceCodeUrl: "",
+  demoUrl: "",
 };
 
-export function ProjectForm({ projectId }: ProjectFormProps) {
+export function ProjectForm({ projectId, variant = "edit" }: ProjectFormProps) {
   const { user, loading, getIdToken } = useAuth();
   const router = useRouter();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -68,6 +83,15 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
         contactEmail: result.data.project.contactEmail ?? "",
         contactPhone: result.data.project.contactPhone ?? "",
         instagramUrl: result.data.project.instagramUrl ?? "",
+        imagesText: (result.data.project.images ?? []).join("\n"),
+        facilitiesUsedText: (result.data.project.facilitiesUsed ?? []).join("\n"),
+        materialsText: (result.data.project.materials ?? []).join("\n"),
+        tagsText: (result.data.project.tags ?? []).join("\n"),
+        externalTeamText: (result.data.project.externalTeam ?? []).join("\n"),
+        award: result.data.project.award ?? "",
+        duration: result.data.project.duration ?? "",
+        sourceCodeUrl: result.data.project.sourceCodeUrl ?? "",
+        demoUrl: result.data.project.demoUrl ?? "",
       });
       setCategory(result.data.project.category);
       setStatus(result.data.project.status);
@@ -83,8 +107,15 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    const lines = (value: string) => value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+    const { imagesText, facilitiesUsedText, materialsText, tagsText, externalTeamText, ...fields } = form;
     const input: ProjectInput = {
-      ...form,
+      ...fields,
+      images: lines(imagesText),
+      facilitiesUsed: lines(facilitiesUsedText),
+      materials: lines(materialsText),
+      tags: lines(tagsText),
+      externalTeam: lines(externalTeamText),
       category,
       status: projectId ? status : "ACTIVE",
     };
@@ -114,7 +145,7 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
   }
 
   return (
-    <form onSubmit={submit} className="flex max-w-3xl flex-col gap-5 rounded-lg border border-border bg-surface p-6 md:p-8">
+    <form onSubmit={submit} className={`flex flex-col gap-5 border border-border bg-surface shadow-sm ${variant === "create" ? "max-w-none border-t-4 border-t-accent p-6 md:p-10" : "max-w-3xl rounded-lg p-6 md:p-8"}`}>
       <div className="flex flex-col gap-2">
         <Label htmlFor="project-title">Project title</Label>
         <Input id="project-title" required maxLength={120} value={form.title} onChange={(event) => updateField("title", event.target.value)} />
@@ -165,6 +196,25 @@ export function ProjectForm({ projectId }: ProjectFormProps) {
         <Field label="Instagram URL" id="project-instagram" type="url" placeholder="https://www.instagram.com/…" value={form.instagramUrl ?? ""} onChange={(value) => updateField("instagramUrl", value)} />
       </div>
 
+      <section className="mt-2 border-t border-border pt-6" aria-labelledby="project-portfolio-details">
+        <p className="eyebrow">Portfolio details</p>
+        <h2 id="project-portfolio-details" className="mt-2 font-display text-h4 text-primary-dark">Show how your project came together</h2>
+        <p className="mt-2 text-small text-muted">Optional. Add one item per line. These details appear on your project page.</p>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          <Field label="Award" id="project-award" value={form.award ?? ""} onChange={(value) => updateField("award", value)} />
+          <Field label="Duration" id="project-duration" placeholder="e.g. Two semesters" value={form.duration ?? ""} onChange={(value) => updateField("duration", value)} />
+          <Field label="Source code URL" id="project-source-code" type="url" value={form.sourceCodeUrl ?? ""} onChange={(value) => updateField("sourceCodeUrl", value)} />
+          <Field label="Demo URL" id="project-demo" type="url" value={form.demoUrl ?? ""} onChange={(value) => updateField("demoUrl", value)} />
+        </div>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          <ListField label="Project image paths" id="project-images" value={form.imagesText} onChange={(value) => updateField("imagesText", value)} placeholder="/images/projects/my-project.jpg" />
+          <ListField label="How it was made · equipment or facilities" id="project-facilities" value={form.facilitiesUsedText} onChange={(value) => updateField("facilitiesUsedText", value)} placeholder="CNC Router" />
+          <ListField label="Materials" id="project-materials" value={form.materialsText} onChange={(value) => updateField("materialsText", value)} placeholder="6 mm aluminium plate" />
+          <ListField label="Tags" id="project-tags" value={form.tagsText} onChange={(value) => updateField("tagsText", value)} placeholder="Robotics" />
+          <ListField label="External contributors" id="project-external-team" value={form.externalTeamText} onChange={(value) => updateField("externalTeamText", value)} placeholder="Contributor name and credit" />
+        </div>
+      </section>
+
       <p className="text-small text-muted">Project ownership is assigned to your signed-in account.</p>
       {error && <StatusMessage status="error">{error}</StatusMessage>}
       <Button type="submit" disabled={pending}>
@@ -193,6 +243,27 @@ function Field({
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>{label} <span className="font-normal text-muted">(optional)</span></Label>
       <Input id={id} type={type} placeholder={placeholder} maxLength={200} value={value} onChange={(event) => onChange(event.target.value)} />
+    </div>
+  );
+}
+
+function ListField({
+  label,
+  id,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={id}>{label} <span className="font-normal text-muted">(optional)</span></Label>
+      <Textarea id={id} rows={3} maxLength={2000} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
     </div>
   );
 }

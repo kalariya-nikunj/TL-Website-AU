@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ExternalLinkIcon, TrophyIcon } from "lucide-react";
 
 import { addProjectMember, getProject, removeProjectMember, searchProjectMembers } from "@/app/actions/projects";
 import { StatusMessage } from "@/components/feedback/StatusMessage";
@@ -11,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { PROJECT_CATEGORIES, type ProjectDetailData, type ProjectMemberCandidate } from "@/types/user-projects";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { ProjectEquipmentUsage } from "@/components/sections/ProjectEquipmentUsage";
+import { DetailList, SidebarField, StatusPill } from "@/components/sections/DetailPanels";
+import { ImageGallery } from "@/components/media/ImageGallery";
 
 type ProjectDetailProps = { projectId: string };
 
@@ -109,91 +112,170 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
 
   const { project } = view;
   return (
-    <div className="max-w-4xl">
-      <div className="rounded-lg border border-border bg-surface p-6 md:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-small font-medium text-primary">{PROJECT_CATEGORIES[project.category]}</p>
-            <h2 className="mt-2 font-display text-h3 text-ink">{project.title}</h2>
-            <p className="mt-2 text-small text-muted">{project.status}</p>
-          </div>
-          {view.viewerIsOwner && (
-            <Button asChild variant="outline"><Link href={`/projects/${project.projectId}/edit`}>Edit project</Link></Button>
-          )}
+    <div className="mx-auto max-w-6xl">
+      <nav aria-label="Breadcrumb" className="mb-5 flex items-center gap-2 text-xs text-muted">
+        <Link href="/profile" className="hover:text-primary">My Projects</Link>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page" className="truncate text-ink">{project.title}</span>
+      </nav>
+
+      <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wider text-primary">{PROJECT_CATEGORIES[project.category]}</p>
+          <h1 className="mt-2 font-display text-h2 text-primary-dark">{project.title}</h1>
+          <p className="mt-2 max-w-3xl text-small text-muted">{project.shortDescription}</p>
         </div>
-        <p className="mt-6 text-body font-medium text-ink">{project.shortDescription}</p>
-        <div className="mt-5 whitespace-pre-wrap text-body text-muted">{project.description}</div>
-
-        <dl className="mt-8 grid gap-x-8 gap-y-5 border-t border-border pt-6 sm:grid-cols-2">
-          <DetailValue label="Department" value={project.department} />
-          <DetailValue label="Branch" value={project.branch} />
-          <DetailValue label="Professor" value={project.professorName} />
-          <DetailValue label="Contact email" value={project.contactEmail} href={project.contactEmail ? `mailto:${project.contactEmail}` : undefined} />
-          <DetailValue label="Contact phone" value={project.contactPhone} href={project.contactPhone ? `tel:${project.contactPhone}` : undefined} />
-          <DetailValue label="Instagram" value={project.instagramUrl ? "Open Instagram" : undefined} href={project.instagramUrl} external />
-          <DetailValue label="Created" value={formatDate(project.createdAt)} />
-          <DetailValue label="Updated" value={formatDate(project.updatedAt)} />
-        </dl>
-      </div>
-
-      <ProjectEquipmentUsage projectId={project.projectId} />
-
-      <section aria-labelledby="project-team-heading" className="mt-8 rounded-lg border border-border bg-surface p-6 md:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 id="project-team-heading" className="font-display text-h4">Team Members</h2>
-            <p className="mt-1 text-small text-muted">Project owner and team members.</p>
-          </div>
-        </div>
-        <ul className="mt-5 divide-y divide-border">
-          {view.members.map((member) => (
-            <li key={member.uid} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0">
-              <div>
-                <p className="font-medium text-ink">{member.name} <span className="ml-1 text-xs font-normal text-muted">{member.role}</span></p>
-                <p className="mt-1 text-small text-muted">{member.email}</p>
-              </div>
-              {view.viewerIsOwner && member.role !== "OWNER" && (
-                <Button size="sm" variant="outline" disabled={Boolean(memberPending)} onClick={() => void removeMember(member.uid, member.name)}>
-                  {memberPending === member.uid ? "Removing…" : "Remove"}
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
-
         {view.viewerIsOwner && (
-          <form onSubmit={submitSearch} className="mt-6 border-t border-border pt-6">
-            <label htmlFor="member-search" className="text-small font-medium text-ink">Add team member</label>
-            <p className="mt-1 text-small text-muted">Search by name, university email, or enrollment number.</p>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <Input id="member-search" minLength={2} maxLength={100} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search existing users" />
-              <Button type="submit" variant="outline" disabled={searching || search.trim().length < 2}>
-                {searching ? "Searching…" : "Search"}
-              </Button>
-            </div>
-            {notice && <StatusMessage status="success" className="mt-4">{notice}</StatusMessage>}
-            {error && <StatusMessage status="error" className="mt-4">{error}</StatusMessage>}
-            {results && results.length > 0 && (
-              <ul className="mt-4 divide-y divide-border rounded-lg border border-border px-4">
-                {results.map((candidate) => (
-                  <li key={candidate.uid} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                    <div>
-                      <p className="font-medium text-ink">{candidate.name}</p>
-                      <p className="text-small text-muted">{candidate.email}</p>
-                    </div>
-                    <Button type="button" size="sm" disabled={Boolean(memberPending)} onClick={() => void addMember(candidate)}>
-                      {memberPending === candidate.uid ? "Adding…" : "Add"}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </form>
+          <Button asChild variant="outline"><Link href={`/projects/${project.projectId}/edit`}>Edit project</Link></Button>
         )}
-        {!view.viewerIsOwner && notice && <StatusMessage status="success" className="mt-4">{notice}</StatusMessage>}
-        {!view.viewerIsOwner && error && <StatusMessage status="error" className="mt-4">{error}</StatusMessage>}
-      </section>
+      </header>
+
+      {project.images?.length ? (
+        <ImageGallery images={project.images.map((src, index) => ({ src, alt: `${project.title}, view ${index + 1}` }))} priority />
+      ) : (
+        <div className="card-chamfer relative flex min-h-64 items-end overflow-hidden bg-primary-dark p-6 sm:min-h-80 sm:p-10 lg:min-h-[26rem]">
+          <div aria-hidden="true" className="absolute inset-0 bg-linear-to-br from-primary via-primary-dark to-ink" />
+          <div aria-hidden="true" className="absolute -right-16 -top-32 size-80 rounded-full border border-accent/35 sm:size-[28rem]" />
+          <div aria-hidden="true" className="absolute right-8 top-8 size-40 rounded-full border border-surface/10 sm:right-24 sm:top-16 sm:size-64" />
+          <div aria-hidden="true" className="absolute inset-0 opacity-15 [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] [background-size:36px_36px]" />
+          <div className="relative flex w-full flex-wrap items-end justify-between gap-5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Tinkerer Lab · Project</p>
+              <p aria-hidden="true" className="mt-4 font-display text-6xl font-bold leading-none text-accent/90 sm:text-8xl">{project.title.trim().slice(0, 1).toUpperCase()}</p>
+            </div>
+            <span className="border border-surface/40 bg-ink/20 px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-surface">{project.status}</span>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-5 lg:items-start">
+        <div className="space-y-6 lg:col-span-3">
+          <section aria-labelledby="project-overview-heading" className="border border-border bg-surface p-6 sm:p-8">
+            <p className="eyebrow">Project overview</p>
+            <h2 id="project-overview-heading" className="mt-2 font-display text-h4 text-primary-dark">About this project</h2>
+            <div className="mt-4 whitespace-pre-wrap text-small leading-relaxed text-muted">{project.description}</div>
+            {project.facilitiesUsed?.length ? (
+              <section aria-labelledby="how-it-was-made" className="mt-7">
+                <h3 id="how-it-was-made" className="font-display text-h4 text-primary-dark">How it was made</h3>
+                <ul className="mt-4 flex flex-col gap-3">
+                  {project.facilitiesUsed.map((facility) => (
+                    <li key={facility} className="flex items-center gap-4 border border-border bg-surface p-3">
+                      <span aria-hidden="true" className="card-chamfer grid size-14 shrink-0 place-items-center bg-primary text-lg font-bold text-accent">TL</span>
+                      <span className="font-medium text-ink">{facility}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+            <div className="mt-7">
+              <DetailList id="project-materials" title="Materials" items={project.materials} />
+            </div>
+            <dl className="mt-6 grid gap-4 border-t border-border pt-5 sm:grid-cols-2">
+              <DetailValue label="Department" value={project.department} />
+              <DetailValue label="Branch" value={project.branch} />
+              <DetailValue label="Professor" value={project.professorName} />
+              <DetailValue label="Contact email" value={project.contactEmail} href={project.contactEmail ? `mailto:${project.contactEmail}` : undefined} />
+              <DetailValue label="Contact phone" value={project.contactPhone} href={project.contactPhone ? `tel:${project.contactPhone}` : undefined} />
+              <DetailValue label="Instagram" value={project.instagramUrl ? "Open Instagram" : undefined} href={project.instagramUrl} external />
+              <DetailValue label="Created" value={formatDate(project.createdAt)} />
+              <DetailValue label="Updated" value={formatDate(project.updatedAt)} />
+            </dl>
+          </section>
+          <ProjectEquipmentUsage projectId={project.projectId} />
+        </div>
+
+        <aside className="space-y-6 lg:sticky lg:top-24 lg:col-span-2 lg:self-start">
+          {project.award && (
+            <div className="flex items-start gap-3 rounded-lg border border-accent bg-accent/15 p-5">
+              <TrophyIcon className="mt-0.5 size-5 shrink-0 text-accent-dark" aria-hidden="true" />
+              <div><p className="eyebrow">Award</p><p className="mt-1 text-small text-ink">{project.award}</p></div>
+            </div>
+          )}
+          <div className="flex flex-col gap-5 border border-border bg-surface p-6">
+            <StatusPill tone={project.status === "COMPLETED" ? "success" : project.status === "ACTIVE" ? "warning" : "muted"}>{project.status === "COMPLETED" ? "Completed" : project.status === "ACTIVE" ? "In progress" : "Archived"}</StatusPill>
+            <SidebarField label="Year">{project.createdAt ? new Date(project.createdAt).getFullYear() : undefined}</SidebarField>
+            <SidebarField label="Duration">{project.duration}</SidebarField>
+            <div>
+              <p className="eyebrow">Tags</p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {(project.tags?.length ? project.tags : [PROJECT_CATEGORIES[project.category], project.department, project.branch].filter((tag): tag is string => Boolean(tag))).map((tag) => <li key={tag} className="border border-border px-2 py-0.5 text-xs text-muted">{tag}</li>)}
+              </ul>
+            </div>
+          </div>
+
+          <section aria-labelledby="project-team-heading" className="border border-border bg-surface p-6 sm:p-8">
+            <p className="eyebrow">Built by</p>
+            <h2 id="project-team-heading" className="mt-2 font-display text-h4 text-primary-dark">Team Members</h2>
+            <p className="mt-1 text-small text-muted">Project owner and team members.</p>
+            <ul className="mt-5 divide-y divide-border">
+              {view.members.map((member) => (
+                <li key={member.uid} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0">
+                  <div>
+                    <p className="font-medium text-ink">{member.name} <span className="ml-1 text-xs font-normal text-muted">{member.role}</span></p>
+                    <p className="mt-1 text-small text-muted">{member.email}</p>
+                  </div>
+                  {view.viewerIsOwner && member.role !== "OWNER" && (
+                    <Button size="sm" variant="outline" disabled={Boolean(memberPending)} onClick={() => void removeMember(member.uid, member.name)}>
+                      {memberPending === member.uid ? "Removing…" : "Remove"}
+                    </Button>
+                  )}
+                </li>
+              ))}
+              {project.externalTeam?.map((name) => (
+                <li key={name} className="py-4 text-small text-muted">{name}</li>
+              ))}
+            </ul>
+
+            {view.viewerIsOwner && (
+              <form onSubmit={submitSearch} className="mt-6 border-t border-border pt-6">
+                <label htmlFor="member-search" className="text-small font-medium text-ink">Add team member</label>
+                <p className="mt-1 text-small text-muted">Search by name, university email, or enrollment number.</p>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <Input id="member-search" minLength={2} maxLength={100} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search existing users" />
+                  <Button type="submit" variant="outline" disabled={searching || search.trim().length < 2}>
+                    {searching ? "Searching…" : "Search"}
+                  </Button>
+                </div>
+                {notice && <StatusMessage status="success" className="mt-4">{notice}</StatusMessage>}
+                {error && <StatusMessage status="error" className="mt-4">{error}</StatusMessage>}
+                {results && results.length > 0 && (
+                  <ul className="mt-4 divide-y divide-border rounded-lg border border-border px-4">
+                    {results.map((candidate) => (
+                      <li key={candidate.uid} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                        <div>
+                          <p className="font-medium text-ink">{candidate.name}</p>
+                          <p className="text-small text-muted">{candidate.email}</p>
+                        </div>
+                        <Button type="button" size="sm" disabled={Boolean(memberPending)} onClick={() => void addMember(candidate)}>
+                          {memberPending === candidate.uid ? "Adding…" : "Add"}
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </form>
+            )}
+            {!view.viewerIsOwner && notice && <StatusMessage status="success" className="mt-4">{notice}</StatusMessage>}
+            {!view.viewerIsOwner && error && <StatusMessage status="error" className="mt-4">{error}</StatusMessage>}
+          </section>
+          {project.sourceCodeUrl && <ExternalProjectLink href={project.sourceCodeUrl}>Source code</ExternalProjectLink>}
+          {project.demoUrl && <ExternalProjectLink href={project.demoUrl}>Demo</ExternalProjectLink>}
+          {project.contactEmail && <ExternalProjectLink href={`mailto:${project.contactEmail}`}>Contact project</ExternalProjectLink>}
+          {project.contactPhone && <ExternalProjectLink href={`tel:${project.contactPhone}`}>Call project contact</ExternalProjectLink>}
+          {project.instagramUrl && <ExternalProjectLink href={project.instagramUrl}>Instagram</ExternalProjectLink>}
+        </aside>
+      </div>
     </div>
+  );
+}
+
+function ExternalProjectLink({ href, children }: { href: string; children: string }) {
+  return (
+    <Button asChild size="lg" variant="outline" className="w-full">
+      <a href={href} target={href.startsWith("https:") ? "_blank" : undefined} rel={href.startsWith("https:") ? "noopener noreferrer" : undefined}>
+        {children}<ExternalLinkIcon aria-hidden="true" />
+      </a>
+    </Button>
   );
 }
 

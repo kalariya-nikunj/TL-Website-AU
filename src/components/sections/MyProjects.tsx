@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { listMyProjects } from "@/app/actions/projects";
+import { CardGrid } from "@/components/sections/CardGrid";
 import { StatusMessage } from "@/components/feedback/StatusMessage";
 import { Button } from "@/components/ui/button";
 import { PROJECT_CATEGORIES, type Project } from "@/types/user-projects";
@@ -71,24 +72,32 @@ export function MyProjects() {
         </div>
       )}
       {!!rows?.length && (
-        <ul className="mt-5 grid gap-4 md:grid-cols-2">
+        <CardGrid columns={2} className="mt-8">
           {rows.map(({ project, isOwner }) => (
             <li key={project.projectId}>
-              <Link href={`/projects/${project.projectId}`} className="block h-full rounded-lg border border-border bg-surface p-5 transition-colors hover:bg-primary-tint focus-visible:bg-primary-tint">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <h3 className="font-display text-h4 text-ink">{project.title}</h3>
-                  <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-medium text-primary">{project.status}</span>
+              <Link href={`/projects/${project.projectId}`} className="group block h-full overflow-hidden border border-border bg-surface transition-[border-color,box-shadow,transform] hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg focus-visible:border-primary/40 focus-visible:shadow-lg">
+                <div className="relative flex aspect-[16/10] items-end overflow-hidden bg-primary-dark p-6 sm:p-8">
+                  <div aria-hidden="true" className="absolute inset-0 bg-linear-to-br from-primary via-primary-dark to-ink opacity-90 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div aria-hidden="true" className="absolute -right-10 -top-12 size-48 rounded-full border border-accent/40 sm:size-64" />
+                  <div aria-hidden="true" className="absolute -right-3 -top-5 size-32 rounded-full border border-accent/25 sm:size-48" />
+                  <div className="relative flex w-full items-end justify-between gap-3">
+                    <p className="font-display text-5xl font-bold text-accent/90 sm:text-6xl" aria-hidden="true">{project.title.trim().slice(0, 1).toUpperCase()}</p>
+                    <span className="border border-surface/40 bg-ink/20 px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-surface">{project.status}</span>
+                  </div>
                 </div>
-                <p className="mt-2 text-small font-medium text-primary">{PROJECT_CATEGORIES[project.category]}</p>
-                <p className="mt-2 line-clamp-3 text-small text-muted">{project.shortDescription}</p>
-                <div className="mt-4 flex flex-wrap justify-between gap-2 text-xs text-muted">
-                  <span>{isOwner ? "Owner" : "Team member"}</span>
-                  <span>Updated {formatDate(project.updatedAt)}</span>
+                <div className="flex min-h-56 flex-col p-5 sm:p-6">
+                  <p className="text-xs font-medium uppercase tracking-wide text-primary">{PROJECT_CATEGORIES[project.category]}</p>
+                  <h3 className="mt-2 line-clamp-2 font-display text-h4 text-primary-dark transition-colors group-hover:text-primary">{project.title}</h3>
+                  <p className="mt-3 line-clamp-3 text-small leading-relaxed text-muted">{project.shortDescription}</p>
+                  <div className="mt-auto flex flex-wrap items-end justify-between gap-3 border-t border-border pt-4 text-xs text-muted">
+                    <span>{isOwner ? "Project owner" : "Team member"}</span>
+                    <span>Updated {formatDate(project.updatedAt)}</span>
+                  </div>
                 </div>
               </Link>
             </li>
           ))}
-        </ul>
+        </CardGrid>
       )}
     </section>
   );
