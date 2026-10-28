@@ -67,6 +67,7 @@ export const headerNav: NavItem[] = [
     href: "/facilities",
     children: [
       { label: "All equipment", href: "/facilities" },
+      { label: "Inventory borrowing", href: "/inventory" },
       { label: "Safety & training", href: "/facilities#safety" },
       { label: "Book a machine", href: "/facilities#booking" },
     ],
@@ -163,6 +164,7 @@ export const footerColumns: FooterColumn[] = [
       { label: "About", href: "/about" },
       { label: "Workshops & events", href: "/workshops" },
       { label: "Facilities", href: "/facilities" },
+      { label: "Inventory Borrowing", href: "/inventory" },
       { label: "Portfolio", href: "/portfolio" },
       { label: "Help", href: "/help" },
     ],
@@ -172,6 +174,7 @@ export const footerColumns: FooterColumn[] = [
     links: [
       { label: "Upcoming workshops", href: "/workshops" },
       { label: "Book a machine", href: "/facilities#booking" },
+      { label: "Inventory borrowing", href: "/inventory" },
       { label: "Safety & training", href: "/facilities#safety" },
       { label: "FAQ", href: "/help#faq" },
       { label: "Contact us", href: "/help#contact" },
