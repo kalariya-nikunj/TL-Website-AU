@@ -42,6 +42,14 @@ service cloud.firestore {
           && exists(/databases/$(database)/documents/projects/$(projectId)/members/$(request.auth.uid)));
     }
 
+    function canReadActiveProject(projectId) {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.matches('.*@ahduni\\.edu\\.in$')
+        && projectExists(projectId)
+        && projectData(projectId).status == 'ACTIVE';
+    }
+
     function optionalProjectText(data, field, maximum) {
       return !(field in data)
         || (data[field] is string && data[field].size() <= maximum);
@@ -192,7 +200,8 @@ service cloud.firestore {
         timestamps, project access, or equipment availability. */
     match /equipmentUsage/{usageId} {
       allow get, list: if resource.data.projectId is string
-        && canReadProject(resource.data.projectId);
+        && (canReadProject(resource.data.projectId)
+          || canReadActiveProject(resource.data.projectId));
       allow create, update, delete: if false;
     }
 

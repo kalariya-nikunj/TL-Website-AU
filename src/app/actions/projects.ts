@@ -284,12 +284,42 @@ export async function getProject(
     const isOwner = snapshot.get("ownerUid") === user.uid;
     const viewerMembership = projectRef.collection("members").doc(user.uid);
     const membership = isOwner ? null : await viewerMembership.get();
-    if (!isOwner && !membership?.exists) throw new AuthError("Project not found or you do not have access.");
+    const isMember = Boolean(membership?.exists);
+    const isPublicActiveProject = snapshot.get("status") === "ACTIVE";
+    if (!isOwner && !isMember && !isPublicActiveProject) throw new AuthError("Project not found or you do not have access.");
     const members = await projectRef.collection("members").get();
     return {
       project: serializeProject(snapshot.data()!, projectId),
-      members: members.docs.map(serializeMember).sort((a, b) => a.role === b.role ? a.name.localeCompare(b.name) : a.role === "OWNER" ? -1 : 1),
+      members: members.docs.map(serializeMember).map((member) => !isOwner && !isMember ? { ...member, email: "" } : member).sort((a, b) => a.role === b.role ? a.name.localeCompare(b.name) : a.role === "OWNER" ? -1 : 1),
       viewerIsOwner: isOwner,
+    };
+  });
+}
+
+/** Anonymous, read-only detail view for active student projects. */
+export async function getPublicProject(
+  projectId: string,
+): Promise<ActionResult<ProjectDetailData>> {
+  return runAction(async () => {
+    requireProjectId(projectId);
+    const db = adminDb();
+    const projectRef = db.collection("projects").doc(projectId);
+    const snapshot = await projectRef.get();
+    if (!snapshot.exists || snapshot.get("status") !== "ACTIVE") {
+      throw new AuthError("Project not found or not publicly available.");
+    }
+    const serialized = serializeProject(snapshot.data()!, projectId);
+    const publicProject = { ...serialized };
+    delete publicProject.contactEmail;
+    delete publicProject.contactPhone;
+    delete publicProject.professorName;
+    const members = await projectRef.collection("members").get();
+    return {
+      project: publicProject,
+      members: members.docs.map(serializeMember)
+        .map((member) => ({ ...member, email: "" }))
+        .sort((a, b) => a.role === b.role ? a.name.localeCompare(b.name) : a.role === "OWNER" ? -1 : 1),
+      viewerIsOwner: false,
     };
   });
 }

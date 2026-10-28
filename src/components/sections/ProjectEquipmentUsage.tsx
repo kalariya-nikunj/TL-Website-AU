@@ -57,9 +57,14 @@ export function ProjectEquipmentUsage({ projectId }: { projectId: string }) {
           <h2 id="equipment-usage-heading" className="font-display text-h4">Live Equipment Usage</h2>
           <p className="mt-1 text-small text-muted">Equipment sessions for this project update live.</p>
         </div>
-        <span className="inline-flex items-center gap-2 text-xs font-medium text-success"><span aria-hidden="true" className="size-2 rounded-full bg-success" />LIVE</span>
+        {user ? (
+          <span className="inline-flex items-center gap-2 text-xs font-medium text-success"><span aria-hidden="true" className="size-2 rounded-full bg-success" />LIVE</span>
+        ) : (
+          <span className="text-xs text-muted">Sign in to view live sessions</span>
+        )}
       </div>
 
+      {!user && <p className="mt-5 text-small text-muted">Project details are public. Live equipment sessions are available to signed-in university users.</p>}
       {error && <StatusMessage status="warning" className="mt-4">Live equipment updates are temporarily unavailable.</StatusMessage>}
       {!error && active.length === 0 && <p className="mt-5 text-small text-muted">No equipment is currently in use for this project.</p>}
       {active.length > 0 && (

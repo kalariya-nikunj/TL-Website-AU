@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 
 import { CTASection } from "@/components/sections/CTASection";
 import { PageHero } from "@/components/sections/PageHero";
-import { ProjectGallery } from "@/components/sections/ProjectGallery";
+import { PublicProjectGallery } from "@/components/sections/PublicProjectGallery";
 import { Section } from "@/components/sections/Section";
 import { SectionHeader } from "@/components/sections/SectionHeader";
-import { projects } from "@/content/projects";
+import { listPublicActiveProjects } from "@/lib/projects/public";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Portfolio",
@@ -13,7 +15,8 @@ export const metadata: Metadata = {
     "Student and lab projects built in the Tinkerer Lab at Ahmedabad University.",
 };
 
-export default function PortfolioPage() {
+export default async function PortfolioPage() {
+  const projects = await listPublicActiveProjects();
   return (
     <>
       <PageHero
@@ -28,11 +31,11 @@ export default function PortfolioPage() {
       <Section tone="default" ariaLabelledBy="all-projects">
         <SectionHeader
           id="all-projects"
-          title="Every project"
-          description="Filter by what a project is made of. Featured work sorts to the front."
+          title="Student Projects"
+          description="Active projects built by students across the Tinkerer Lab community."
           className="mb-8"
         />
-        <ProjectGallery projects={projects} />
+        <PublicProjectGallery projects={projects} />
       </Section>
 
       <CTASection

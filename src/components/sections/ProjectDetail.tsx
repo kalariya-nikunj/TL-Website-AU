@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ExternalLinkIcon, TrophyIcon } from "lucide-react";
 
-import { addProjectMember, getProject, removeProjectMember, searchProjectMembers } from "@/app/actions/projects";
+import { addProjectMember, getProject, getPublicProject, removeProjectMember, searchProjectMembers } from "@/app/actions/projects";
 import { StatusMessage } from "@/components/feedback/StatusMessage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +18,6 @@ type ProjectDetailProps = { projectId: string };
 
 export function ProjectDetail({ projectId }: ProjectDetailProps) {
   const { user, loading, getIdToken } = useAuth();
-  const router = useRouter();
   const [view, setView] = useState<ProjectDetailData | null>(null);
   const [loadingProject, setLoadingProject] = useState(true);
   const [error, setError] = useState("");
@@ -33,19 +31,25 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) {
-      router.replace(`/login?next=${encodeURIComponent(`/projects/${projectId}`)}`);
-      return;
-    }
     let cancelled = false;
-    void fetchProject().then((result) => {
+    void (async () => {
+      if (user) {
+        const privateResult = await fetchProject();
+        if (cancelled) return;
+        if (privateResult.ok) {
+          setView(privateResult.data);
+          setLoadingProject(false);
+          return;
+        }
+      }
+      const publicResult = await getPublicProject(projectId);
       if (cancelled) return;
-      if (!result.ok) setError(result.error);
-      else setView(result.data);
+      if (!publicResult.ok) setError(publicResult.error);
+      else setView(publicResult.data);
       setLoadingProject(false);
-    });
+    })();
     return () => { cancelled = true; };
-  }, [fetchProject, loading, projectId, router, user]);
+  }, [fetchProject, loading, projectId, user]);
 
   async function refreshProject() {
     const result = await fetchProject();
@@ -98,7 +102,7 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
     await refreshProject();
   }
 
-  if (loading || !user || loadingProject) {
+  if (loading || loadingProject) {
     return <div aria-label="Loading project" className="h-48 animate-pulse rounded-lg bg-primary-tint" />;
   }
   if (!view) {
@@ -212,7 +216,7 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
                 <li key={member.uid} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0">
                   <div>
                     <p className="font-medium text-ink">{member.name} <span className="ml-1 text-xs font-normal text-muted">{member.role}</span></p>
-                    <p className="mt-1 text-small text-muted">{member.email}</p>
+                    {member.email && <p className="mt-1 text-small text-muted">{member.email}</p>}
                   </div>
                   {view.viewerIsOwner && member.role !== "OWNER" && (
                     <Button size="sm" variant="outline" disabled={Boolean(memberPending)} onClick={() => void removeMember(member.uid, member.name)}>
