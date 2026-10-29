@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { MenuIcon } from "lucide-react";
 
@@ -224,13 +225,20 @@ export function Header({ variant }: HeaderProps) {
               <span
                 aria-hidden="true"
                 className={cn(
-                  "grid shrink-0 place-items-center rounded-lg bg-primary font-display text-surface transition-all duration-300 ease-out",
+                  "grid shrink-0 place-items-center rounded-lg border border-border bg-surface transition-all duration-300 ease-out",
                   compact
                     ? "size-10 text-body"
                     : "size-10 text-body lg:size-16 lg:text-h3",
                 )}
               >
-                TL
+                <Image
+                  src="/images/ahmedabad-university-logo.png"
+                  alt=""
+                  width={64}
+                  height={64}
+                  priority
+                  className="size-full rounded-lg object-contain p-1"
+                />
               </span>
 
               {/* Collapses to zero width rather than just hiding, so the row
