@@ -18,17 +18,32 @@ export function EquipmentDirectory() {
   useEffect(() => {
     if (loading || !user) return;
     let cancelled = false;
-    queueMicrotask(() => {
-      setPending(true);
+    const refresh = () => {
+      if (equipment.length === 0) setPending(true);
       void getIdToken().then(listEquipment).then((result) => {
         if (cancelled) return;
         if (result.ok) setEquipment(result.data);
         else setError(result.error);
+        if (result.ok) setError("");
+        setPending(false);
+      }).catch(() => {
+        if (cancelled) return;
+        setError("Equipment could not be refreshed. Please try again shortly.");
         setPending(false);
       });
-    });
-    return () => { cancelled = true; };
-  }, [getIdToken, loading, user]);
+    };
+    refresh();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") refresh();
+    }, 30_000);
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [equipment.length, getIdToken, loading, user]);
 
   if (loading) return <div aria-label="Loading equipment" className="h-52 animate-pulse rounded-lg bg-primary-tint" />;
   if (!user) {

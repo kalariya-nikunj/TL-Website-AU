@@ -29,7 +29,7 @@ const homepageFacilityPhotos: Record<string, string> = {
   "woodworking-shop": "/images/home-facilities/woodworking-shop.jpg",
 };
 
-import { machineryImageById, machineryItems } from "@/content/machinery";
+import { getMachineryCatalog, machineryImageById } from "@/content/machinery";
 
 /**
  * The homepage.
@@ -48,10 +48,10 @@ import { machineryImageById, machineryItems } from "@/content/machinery";
  */
 export const revalidate = 3600;
 
-export default function HomePage() {
+export default async function HomePage() {
   const upcoming = getUpcomingEvents(4);
   const railFacilities = facilities.slice(0, 5);
-  const railMachinery = machineryItems;
+  const railMachinery = await getMachineryCatalog();
   const railProjects = featuredProjects.slice(0, 4);
 
   return (

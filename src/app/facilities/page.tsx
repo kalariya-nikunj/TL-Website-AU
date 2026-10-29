@@ -3,39 +3,9 @@ import type { Metadata } from "next";
 import { CTASection } from "@/components/sections/CTASection";
 import { FacilityExplorer } from "@/components/sections/FacilityExplorer";
 import { PageHero } from "@/components/sections/PageHero";
-import { machineryDisplayName, machineryImageById, machineryItems } from "@/content/machinery";
+import { getMachineryCatalog, toMachineryFacilities } from "@/content/machinery";
 import { facilities } from "@/content/facilities";
 import type { Facility } from "@/types";
-
-const facilityDirectory: Facility[] = [
-  ...facilities,
-  ...machineryItems.map((item) => {
-    const model = item.description.replace(/^Consumable Link\s*[·-]\s*/i, "");
-    const name = machineryDisplayName[item.itemId] ?? item.name;
-    const image = machineryImageById[item.itemId];
-
-    return {
-      slug: `inventory-${item.itemId}`,
-      name,
-      category: item.category,
-      shortDescription: model || "Machine listed in the Tinkerers Lab inventory.",
-      description: model
-        ? `${name} · ${model}`
-        : `${name}, listed in the Tinkerers Lab machinery inventory.`,
-      specs: [
-        ...(model ? [{ label: "Make / Model", value: model }] : []),
-        { label: "Quantity", value: String(item.totalQuantity) },
-        ...(item.sourceStatus
-          ? [{ label: "Current status", value: item.sourceStatus }]
-          : []),
-      ],
-      images: [image],
-      requiresTraining: false,
-      catalogOnly: true,
-      ...(item.detailsUrl ? { detailsUrl: item.detailsUrl } : {}),
-    };
-  }),
-];
 
 const facilityImageOverrides: Record<string, string> = {
   "laser-cutter": "/images/home-facilities/laser-cutter.jpg",
@@ -51,7 +21,9 @@ export const metadata: Metadata = {
     "Fabrication, electronics, and workshop equipment available to students at the Tinkerer Lab.",
 };
 
-export default function FacilitiesPage() {
+export default async function FacilitiesPage() {
+  const machineryItems = await getMachineryCatalog();
+  const facilityDirectory: Facility[] = [...facilities, ...toMachineryFacilities(machineryItems)];
   return (
     <>
       <PageHero

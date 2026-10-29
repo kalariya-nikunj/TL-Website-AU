@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronDownIcon, ShieldAlertIcon } from "lucide-react";
@@ -8,6 +8,7 @@ import { ChevronDownIcon, ShieldAlertIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/layout/Container";
 import { ImageGallery } from "@/components/media/ImageGallery";
+import { refreshMachineryFacilities } from "@/app/actions/catalog";
 import type { Facility } from "@/types";
 
 /**
@@ -35,8 +36,32 @@ type FacilityExplorerProps = {
 
 export function FacilityExplorer({ facilities, imageOverrides = {} }: FacilityExplorerProps) {
   const baseId = useId();
+  const [directory, setDirectory] = useState(facilities);
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const rowRefs = useRef(new Map<string, HTMLButtonElement>());
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const machinery = await refreshMachineryFacilities();
+        if (cancelled) return;
+        setDirectory((current) => [...current.filter((entry) => !entry.catalogOnly), ...machinery]);
+      } catch {
+        // Keep the server-rendered directory visible when a refresh is unavailable.
+      }
+    };
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void refresh();
+    }, 30_000);
+    const onFocus = () => { void refresh(); };
+    window.addEventListener("focus", onFocus);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
 
   const rowId = (slug: string) => `${baseId}-row-${slug}`;
   const panelId = (slug: string) => `${baseId}-panel-${slug}`;
@@ -57,7 +82,7 @@ export function FacilityExplorer({ facilities, imageOverrides = {} }: FacilityEx
         className="border-t border-border"
         aria-label="Lab equipment"
       >
-        {facilities.map((facility) => {
+        {directory.map((facility) => {
           const open = openSlug === facility.slug;
           const image = imageOverrides[facility.slug] ?? facility.images[0];
           const detailsHref = facility.detailsUrl ?? `/facilities/${facility.slug}`;

@@ -1,10 +1,6 @@
-import sourceInventory from "../../scripts/inventory-catalog.json";
-
+import { getInventoryCatalog } from "@/lib/catalog/live";
 import type { InventoryItem } from "@/types/inventory";
-
-export const machineryItems = (sourceInventory as InventoryItem[]).filter(
-  (item) => item.sourceSheet === "Macheneries",
-);
+import type { Facility } from "@/types";
 
 export const machineryImageById: Record<string, string> = {
   "macheneries-3d-printer-bambu-lab-x1-c-fdm-printer": "/images/home-machineries/3d-printer-bambu-x1c.png",
@@ -30,3 +26,32 @@ export const machineryDisplayName: Record<string, string> = {
   "macheneries-acrylic-bending-machin-abm700-1300": "Acrylic Bending Machine",
   "macheneries-air-compresser-kpt-kc030l": "Air Compressor",
 };
+
+export async function getMachineryCatalog(): Promise<InventoryItem[]> {
+  return (await getInventoryCatalog()).filter((item) => item.sourceSheet === "Macheneries");
+}
+
+export function toMachineryFacilities(items: InventoryItem[]): Facility[] {
+  return items.map((item) => {
+    const model = item.description.replace(/^Consumable Link\s*[·-]\s*/i, "");
+    const name = machineryDisplayName[item.itemId] ?? item.name;
+    return {
+      slug: `inventory-${item.itemId}`,
+      name,
+      category: item.category,
+      shortDescription: model || "Machine listed in the Tinkerers Lab inventory.",
+      description: model
+        ? `${name} · ${model}`
+        : `${name}, listed in the Tinkerers Lab machinery inventory.`,
+      specs: [
+        ...(model ? [{ label: "Make / Model", value: model }] : []),
+        { label: "Quantity", value: String(item.totalQuantity) },
+        ...(item.sourceStatus ? [{ label: "Current status", value: item.sourceStatus }] : []),
+      ],
+      images: [machineryImageById[item.itemId] ?? "/images/hero/facilities-a.jpg"],
+      requiresTraining: false,
+      catalogOnly: true,
+      ...(item.detailsUrl ? { detailsUrl: item.detailsUrl } : {}),
+    };
+  });
+}

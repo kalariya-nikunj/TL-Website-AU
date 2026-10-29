@@ -6,10 +6,8 @@ import { AuthError, requireUser, runAction, type ActionResult } from "@/lib/auth
 import { adminDb } from "@/lib/firebase/admin";
 import type { InventoryData, InventoryItem, InventoryLoan } from "@/types/inventory";
 import { syncInventorySheetsRecord } from "@/lib/inventory/sheets-sync";
-import sourceCatalog from "../../../scripts/inventory-catalog.json";
+import { getInventoryCatalog } from "@/lib/catalog/live";
 
-const CATALOG = sourceCatalog as InventoryItem[];
-const itemById = new Map(CATALOG.map((item) => [item.itemId, item]));
 const MAX_BORROW_QUANTITY = 100;
 
 function iso(value: unknown): string {
@@ -18,15 +16,29 @@ function iso(value: unknown): string {
     : "";
 }
 
-function serializeItem(data: DocumentData, itemId: string, source: InventoryItem): InventoryItem {
+function sourceFingerprint(source: InventoryItem): string {
+  return JSON.stringify([
+    source.name, source.category, source.description, source.sourceSheet, source.sourceRow,
+    source.detailsUrl, source.totalQuantity, source.availableQuantity, source.borrowable,
+    source.stockNeedsReview, source.sourceStatus,
+  ]);
+}
+
+function serializeItem(source: InventoryItem, data: DocumentData | undefined, activeQuantity: number): InventoryItem {
+  const stockOverrideMatches = data?.stockOverrideSourceFingerprint === sourceFingerprint(source)
+    && Number.isInteger(data.stockOverrideTotalQuantity);
+  const totalQuantity = stockOverrideMatches ? Number(data.stockOverrideTotalQuantity) : source.totalQuantity;
+  const sourceAvailable = stockOverrideMatches ? totalQuantity : source.availableQuantity;
   return {
     ...source,
-    itemId,
-    totalQuantity: Number.isInteger(data.totalQuantity) ? data.totalQuantity : source.totalQuantity,
-    availableQuantity: Number.isInteger(data.availableQuantity) ? data.availableQuantity : source.availableQuantity,
-    borrowable: data.borrowable === false ? false : source.borrowable,
-    stockNeedsReview: data.stockNeedsReview === false ? false : source.stockNeedsReview,
-    sourceStatus: typeof data.sourceStatus === "string" ? data.sourceStatus : source.sourceStatus,
+    totalQuantity,
+    availableQuantity: Math.max(0, Math.min(totalQuantity, sourceAvailable) - activeQuantity),
+    ...(stockOverrideMatches
+      ? {
+          stockNeedsReview: false,
+          sourceStatus: typeof data?.sourceStatus === "string" ? data.sourceStatus : source.sourceStatus,
+        }
+      : {}),
   };
 }
 
@@ -96,15 +108,20 @@ export async function getInventoryData(idToken: string | null): Promise<ActionRe
       isAdmin = isInventoryAdmin(user.email);
     }
     const db = adminDb();
-    const [itemSnapshots, loansSnapshot, projects] = await Promise.all([
+    const [catalog, itemSnapshots, loansSnapshot, projects, activeLoansSnapshot] = await Promise.all([
+      getInventoryCatalog(),
       db.collection("inventoryItems").get(),
       uid ? (isAdmin ? db.collection("inventoryLoans").get() : db.collection("inventoryLoans").where("userUid", "==", uid).get()) : Promise.resolve(null),
       uid ? accessibleProjects(uid) : Promise.resolve([]),
+      db.collection("inventoryLoans").where("status", "in", ["REQUESTED", "BORROWED", "APPROVED"]).get(),
     ]);
     const persistedItems = new Map(itemSnapshots.docs.map((document) => [document.id, document.data()]));
-    const items = CATALOG.map((item) => persistedItems.has(item.itemId)
-      ? serializeItem(persistedItems.get(item.itemId)!, item.itemId, item)
-      : item);
+    const activeQuantityByItem = new Map<string, number>();
+    for (const loan of activeLoansSnapshot.docs) {
+      const itemId = String(loan.get("itemId") ?? "");
+      activeQuantityByItem.set(itemId, (activeQuantityByItem.get(itemId) ?? 0) + (Number(loan.get("quantity")) || 0));
+    }
+    const items = catalog.map((item) => serializeItem(item, persistedItems.get(item.itemId), activeQuantityByItem.get(item.itemId) ?? 0));
     const loans = loansSnapshot?.docs
       .map((document) => serializeLoan(document.data(), document.id))
       .sort((a, b) => (b.requestedAt || b.borrowedAt).localeCompare(a.requestedAt || a.borrowedAt)) ?? [];
@@ -123,7 +140,7 @@ export async function borrowInventoryItem(
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_BORROW_QUANTITY) {
       throw new AuthError("Choose a valid quantity to borrow.");
     }
-    const source = itemById.get(itemId);
+    const source = (await getInventoryCatalog()).find((item) => item.itemId === itemId);
     if (!source) throw new AuthError("That inventory item is not available.");
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(projectId)) throw new AuthError("Select a project for this borrowing request.");
 
@@ -136,28 +153,36 @@ export async function borrowInventoryItem(
     let projectTitle = "";
 
     await db.runTransaction(async (transaction) => {
-      const [itemSnapshot, project, member] = await Promise.all([
+      const [itemSnapshot, project, member, itemLoans] = await Promise.all([
         transaction.get(itemRef), transaction.get(projectRef), transaction.get(memberRef),
+        transaction.get(db.collection("inventoryLoans").where("itemId", "==", itemId)),
       ]);
       const authorizedProject = project.exists && (project.get("ownerUid") === user.uid || member.exists && member.get("uid") === user.uid && ["OWNER", "MEMBER"].includes(String(member.get("role"))));
       if (!authorizedProject) throw new AuthError("Choose a project you own or belong to.");
       projectTitle = String(project.get("title") ?? "");
-      const available = itemSnapshot.exists && Number.isInteger(itemSnapshot.get("availableQuantity"))
-        ? Number(itemSnapshot.get("availableQuantity"))
-        : source.availableQuantity;
-      const borrowable = itemSnapshot.exists ? itemSnapshot.get("borrowable") !== false : source.borrowable;
-      const needsReview = itemSnapshot.exists ? itemSnapshot.get("stockNeedsReview") === true : source.stockNeedsReview;
+      const storedItem = itemSnapshot.data();
+      const stockOverrideMatches = storedItem?.stockOverrideSourceFingerprint === sourceFingerprint(source)
+        && Number.isInteger(storedItem.stockOverrideTotalQuantity);
+      const total = stockOverrideMatches ? Number(storedItem.stockOverrideTotalQuantity) : source.totalQuantity;
+      const baseAvailable = stockOverrideMatches ? total : source.availableQuantity;
+      const activeQuantity = itemLoans.docs
+        .filter((loan) => ["REQUESTED", "BORROWED", "APPROVED"].includes(String(loan.get("status"))))
+        .reduce((sum, loan) => sum + (Number(loan.get("quantity")) || 0), 0);
+      const available = Math.max(0, Math.min(total, baseAvailable) - activeQuantity);
+      const borrowable = source.borrowable;
+      const needsReview = source.stockNeedsReview;
       if (!borrowable || needsReview) throw new AuthError("This item is not available to borrow yet; please ask lab staff to confirm its stock.");
       if (quantity > available) throw new AuthError(`Only ${available} ${available === 1 ? "unit is" : "units are"} available.`);
       if (!itemSnapshot.exists) {
         transaction.create(itemRef, {
           ...source,
+          totalQuantity: total,
           availableQuantity: available - quantity,
           updatedAt: now,
           createdAt: now,
         });
       } else {
-        transaction.update(itemRef, { availableQuantity: available - quantity, updatedAt: now });
+        transaction.update(itemRef, { totalQuantity: total, availableQuantity: available - quantity, updatedAt: now });
       }
       transaction.create(loanRef, {
         loanId: loanRef.id,
@@ -213,6 +238,7 @@ export async function returnInventoryItem(
     const user = await requireUser(idToken);
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(loanId)) throw new AuthError("That borrowing record is not valid.");
     const db = adminDb();
+    const catalog = await getInventoryCatalog();
     const loanRef = db.collection("inventoryLoans").doc(loanId);
     const now = FieldValue.serverTimestamp();
     let returned: InventoryLoan | null = null;
@@ -223,18 +249,24 @@ export async function returnInventoryItem(
       if (!loan.exists || (loan.get("userUid") !== user.uid && !isAdmin)) throw new AuthError("Borrowing record not found.");
       if (!["BORROWED", "APPROVED"].includes(String(loan.get("status")))) throw new AuthError("Only an active borrowing can be returned.");
       const itemId = String(loan.get("itemId") ?? "");
-      const source = itemById.get(itemId);
-      if (!source) throw new AuthError("Inventory item not found.");
       const itemRef = db.collection("inventoryItems").doc(itemId);
-      const item = await transaction.get(itemRef);
+      const [item, itemLoans] = await Promise.all([
+        transaction.get(itemRef),
+        transaction.get(db.collection("inventoryLoans").where("itemId", "==", itemId)),
+      ]);
+      const source = catalog.find((entry) => entry.itemId === itemId)
+        ?? (item.exists ? item.data() as InventoryItem : undefined);
+      if (!source) throw new AuthError("Inventory item not found.");
       const quantity = Number(loan.get("quantity")) || 1;
-      const totalQuantity = item.exists && Number.isInteger(item.get("totalQuantity"))
-        ? Number(item.get("totalQuantity"))
-        : source.totalQuantity;
-      const availableQuantity = item.exists && Number.isInteger(item.get("availableQuantity"))
-        ? Number(item.get("availableQuantity"))
-        : source.availableQuantity;
-      const nextAvailable = Math.min(totalQuantity, availableQuantity + quantity);
+      const itemData = item.data();
+      const stockOverrideMatches = itemData?.stockOverrideSourceFingerprint === sourceFingerprint(source)
+        && Number.isInteger(itemData.stockOverrideTotalQuantity);
+      const totalQuantity = stockOverrideMatches ? Number(itemData.stockOverrideTotalQuantity) : source.totalQuantity;
+      const activeQuantity = itemLoans.docs
+        .filter((entry) => entry.id !== loanId && ["REQUESTED", "BORROWED", "APPROVED"].includes(String(entry.get("status"))))
+        .reduce((sum, entry) => sum + (Number(entry.get("quantity")) || 0), 0);
+      const baselineAvailable = stockOverrideMatches ? totalQuantity : source.availableQuantity;
+      const nextAvailable = Math.max(0, Math.min(totalQuantity, baselineAvailable) - activeQuantity);
       transaction.update(loanRef, { status: "RETURNED", returnedAt: now, returnedByEmail: user.email ?? "", updatedAt: now });
       if (item.exists) {
         transaction.update(itemRef, { availableQuantity: nextAvailable, updatedAt: now });
@@ -280,19 +312,21 @@ export async function updateInventoryStock(
     if (!Number.isInteger(totalQuantity) || totalQuantity < 0 || totalQuantity > 100_000) {
       throw new AuthError("Enter a valid total stock quantity.");
     }
-    const source = itemById.get(itemId);
+    const source = (await getInventoryCatalog()).find((item) => item.itemId === itemId);
     if (!source) throw new AuthError("That inventory item is not available.");
     const db = adminDb();
     const itemRef = db.collection("inventoryItems").doc(itemId);
     let updated: InventoryItem | null = null;
     await db.runTransaction(async (transaction) => {
-      const activeLoans = await transaction.get(db.collection("inventoryLoans").where("itemId", "==", itemId));
+      const [activeLoans, itemSnapshot] = await Promise.all([
+        transaction.get(db.collection("inventoryLoans").where("itemId", "==", itemId)),
+        transaction.get(itemRef),
+      ]);
       const activeQuantity = activeLoans.docs
         // Requests reserve stock when submitted, so pending approvals count too.
         .filter((loan) => ["REQUESTED", "BORROWED", "APPROVED"].includes(String(loan.get("status"))))
         .reduce((sum, loan) => sum + (Number(loan.get("quantity")) || 0), 0);
       if (totalQuantity < activeQuantity) throw new AuthError(`At least ${activeQuantity} unit(s) must remain in stock while requests are pending or items are borrowed.`);
-      const itemSnapshot = await transaction.get(itemRef);
       const next = {
         ...source,
         totalQuantity,
@@ -300,6 +334,8 @@ export async function updateInventoryStock(
         borrowable: source.borrowable,
         stockNeedsReview: false,
         sourceStatus: "Stock confirmed by lab administrator",
+        stockOverrideTotalQuantity: totalQuantity,
+        stockOverrideSourceFingerprint: sourceFingerprint(source),
         updatedAt: FieldValue.serverTimestamp(),
         ...(itemSnapshot.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
       };

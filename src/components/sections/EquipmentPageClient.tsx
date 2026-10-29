@@ -37,7 +37,20 @@ export function EquipmentPageClient({ equipmentId, equipmentUrl }: EquipmentPage
   }, [equipmentId, getIdToken]);
 
   useEffect(() => {
-    if (!loading && user) queueMicrotask(() => { void refresh(); });
+    if (loading || !user) return;
+    let cancelled = false;
+    const load = () => { if (!cancelled) void refresh(); };
+    queueMicrotask(load);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") load();
+    }, 30_000);
+    const onFocus = load;
+    window.addEventListener("focus", onFocus);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
   }, [loading, refresh, user]);
 
   async function start() {

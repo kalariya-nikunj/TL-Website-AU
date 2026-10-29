@@ -6,10 +6,9 @@ import { adminDb } from "@/lib/firebase/admin";
 import { AuthError, requireUser, runAction, type ActionResult } from "@/lib/auth/verify";
 import { retryPendingEquipmentUsageSheetSync, syncEquipmentUsageToGoogleSheets } from "@/lib/equipment/usage-sheet-sync";
 import type { Equipment, EquipmentProjectOption, EquipmentUsage, EquipmentStatus, EquipmentUsageStatus } from "@/types/equipment";
-import masterRecords from "../../../scripts/equipment-master.json";
+import { getEquipmentMaster, getLiveMachineryRecord, type LiveEquipmentMaster } from "@/lib/catalog/live";
 
-type MasterEquipment = Omit<Equipment, "status" | "isActive"> & { currentStatus: string };
-const EQUIPMENT_MASTER = masterRecords as MasterEquipment[];
+type MasterEquipment = LiveEquipmentMaster;
 
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 
@@ -19,38 +18,30 @@ function toIso(value: unknown): string {
     : "";
 }
 
-function serializeEquipment(data: DocumentData, equipmentId: string): Equipment {
+function sourceRuntimeStatus(currentStatus: string): EquipmentStatus {
+  const normalized = currentStatus.trim().toLowerCase();
+  if (isSourceOutOfWork(normalized)) return "MAINTENANCE";
+  // An empty status was treated as available by the existing equipment flow.
+  // Keep that behavior while recognizing explicit maintenance states from Sheets.
+  return !normalized || /^(in work|available|in service|working|operational)$/.test(normalized)
+    ? "AVAILABLE"
+    : "MAINTENANCE";
+}
+
+function serializeMasterEquipment(record: MasterEquipment, persisted?: DocumentData): Equipment {
+  const sheetStatus = sourceRuntimeStatus(record.currentStatus);
   return {
-    equipmentId,
-    ...(typeof data.srNo === "number" ? { srNo: data.srNo } : {}),
-    name: String(data.name ?? ""),
-    ...(typeof data.manufacturer === "string" && data.manufacturer ? { manufacturer: data.manufacturer } : {}),
-    ...(typeof data.model === "string" && data.model ? { model: data.model } : {}),
-    ...(typeof data.type === "string" && data.type ? { type: data.type } : {}),
-    ...(typeof data.detailsUrl === "string" && data.detailsUrl ? { detailsUrl: data.detailsUrl } : {}),
-    ...(typeof data.quantity === "number" ? { quantity: data.quantity } : {}),
-    ...(typeof data.description === "string" ? { description: data.description } : {}),
-    ...(typeof data.maintenancePartner === "string" && data.maintenancePartner ? { maintenancePartner: data.maintenancePartner } : {}),
-    ...(typeof data.contact === "string" && data.contact ? { contact: data.contact } : {}),
-    ...(typeof data.currentStatus === "string" ? { currentStatus: data.currentStatus } : {}),
-    status: data.status as EquipmentStatus,
-    isActive: data.isActive === true,
-    ...(typeof data.activeUsageId === "string" ? { activeUsageId: data.activeUsageId } : {}),
-    ...(typeof data.lastUsageId === "string" ? { lastUsageId: data.lastUsageId } : {}),
-    usageCount: typeof data.usageCount === "number" ? data.usageCount : 0,
+    ...record,
+    status: sheetStatus === "MAINTENANCE" ? sheetStatus : persisted?.status === "IN_USE" ? "IN_USE" : sheetStatus,
+    isActive: true,
+    ...(typeof persisted?.activeUsageId === "string" ? { activeUsageId: persisted.activeUsageId } : {}),
+    ...(typeof persisted?.lastUsageId === "string" ? { lastUsageId: persisted.lastUsageId } : {}),
+    usageCount: typeof persisted?.usageCount === "number" ? persisted.usageCount : 0,
   };
 }
 
-function sourceRuntimeStatus(currentStatus: string): EquipmentStatus {
-  return isSourceOutOfWork(currentStatus) ? "MAINTENANCE" : "AVAILABLE";
-}
-
-function serializeMasterEquipment(record: MasterEquipment): Equipment {
-  return { ...record, status: sourceRuntimeStatus(record.currentStatus), isActive: true };
-}
-
 function isSourceOutOfWork(value: unknown): boolean {
-  return typeof value === "string" && value.trim().toLowerCase() === "out of work";
+  return typeof value === "string" && /^(out[ -]of[ -]work|maintenance|under maintenance|unavailable|under repair|disabled)$/i.test(value.trim());
 }
 
 function serializeUsage(data: DocumentData, usageId: string): EquipmentUsage {
@@ -110,7 +101,7 @@ async function releaseLegacyUsageLock(db: ReturnType<typeof adminDb>, equipmentI
 
     const nextStatus = equipment.get("isActive") !== true
       ? "DISABLED"
-      : isSourceOutOfWork(equipment.get("currentStatus")) ? "MAINTENANCE" : "AVAILABLE";
+      : sourceRuntimeStatus(String(equipment.get("currentStatus") ?? ""));
     transaction.update(equipmentRef, {
       status: nextStatus,
       activeUsageId: FieldValue.delete(),
@@ -157,18 +148,15 @@ export async function getEquipmentPage(
     await requireProfile(user.uid);
     validateId(equipmentId, "equipment");
     const db = adminDb();
+    const masterRecord = (await getEquipmentMaster()).find((record) => record.equipmentId === equipmentId);
+    if (!masterRecord) throw new AuthError("Equipment not found.");
     await releaseLegacyUsageLock(db, equipmentId);
     const equipmentSnapshot = await db.collection("equipment").doc(equipmentId).get();
-    const masterRecord = EQUIPMENT_MASTER.find((record) => record.equipmentId === equipmentId);
-    if (!equipmentSnapshot.exists && !masterRecord) throw new AuthError("Equipment not found.");
-    const equipment = equipmentSnapshot.exists
-      ? serializeEquipment(equipmentSnapshot.data()!, equipmentId)
-      : serializeMasterEquipment(masterRecord!);
+    const currentData = equipmentSnapshot.exists ? equipmentSnapshot.data()! : undefined;
+    const equipment = serializeMasterEquipment(masterRecord, currentData);
     const seeded = equipmentSnapshot.exists;
     const projects = await listAccessibleProjects(user.uid);
-    const lastUsageId = typeof equipmentSnapshot.get("lastUsageId") === "string"
-      ? equipmentSnapshot.get("lastUsageId")
-      : equipmentSnapshot.get("activeUsageId");
+    const lastUsageId = equipment.lastUsageId ?? equipment.activeUsageId;
     let latestUsage: EquipmentUsage | null = null;
     if (seeded && typeof lastUsageId === "string") {
       const usageSnapshot = await db.collection("equipmentUsage").doc(lastUsageId).get();
@@ -197,10 +185,9 @@ export async function listEquipment(
       .map((document) => releaseLegacyUsageLock(db, document.id)));
     const snapshot = await db.collection("equipment").get();
     const persisted = new Map(snapshot.docs.map((document) => [document.id, document.data()]));
-    return EQUIPMENT_MASTER
-      .map((record) => persisted.has(record.equipmentId)
-        ? serializeEquipment(persisted.get(record.equipmentId)!, record.equipmentId)
-        : serializeMasterEquipment(record))
+    const masterRecords = await getEquipmentMaster();
+    return masterRecords
+      .map((record) => serializeMasterEquipment(record, persisted.get(record.equipmentId)))
       .filter((equipment) => equipment.isActive)
       .sort((a, b) => a.name.localeCompare(b.name));
   });
@@ -217,6 +204,8 @@ export async function startEquipmentUsage(
     validateId(equipmentId, "equipment");
     validateId(projectId, "project");
     const db = adminDb();
+    const sourceRecord = await getLiveMachineryRecord(equipmentId);
+    if (!sourceRecord) throw new AuthError("Equipment not found in the live machinery list.");
     const equipmentRef = db.collection("equipment").doc(equipmentId);
     const projectRef = db.collection("projects").doc(projectId);
     const memberRef = projectRef.collection("members").doc(user.uid);
@@ -235,25 +224,27 @@ export async function startEquipmentUsage(
       ))) {
         throw new AuthError("You do not have permission to use this project.");
       }
-      if (!equipment.exists) throw new AuthError("Equipment not found.");
-      if (equipment.get("isActive") !== true || isSourceOutOfWork(equipment.get("currentStatus"))
-        || equipment.get("status") === "MAINTENANCE" || equipment.get("status") === "DISABLED") {
+      if (isSourceOutOfWork(sourceRecord.currentStatus)
+        || equipment.exists && equipment.get("status") === "DISABLED") {
         throw new AuthError("This equipment is currently unavailable.");
       }
-      if (equipment.get("status") !== "AVAILABLE" && equipment.get("status") !== "IN_USE") {
+      const operationalStatus = equipment.exists
+        ? equipment.get("status") === "IN_USE" ? "IN_USE" : sourceRuntimeStatus(sourceRecord.currentStatus)
+        : sourceRuntimeStatus(sourceRecord.currentStatus);
+      if (operationalStatus !== "AVAILABLE" && operationalStatus !== "IN_USE") {
         throw new AuthError("This equipment is currently unavailable.");
       }
 
-      const legacyUsageId = equipment.get("status") === "IN_USE" && typeof equipment.get("activeUsageId") === "string"
+      const legacyUsageId = operationalStatus === "IN_USE" && typeof equipment.get("activeUsageId") === "string"
         ? String(equipment.get("activeUsageId"))
         : "";
       legacyUsageIdToSync = legacyUsageId;
       const legacyUsageRef = legacyUsageId ? db.collection("equipmentUsage").doc(legacyUsageId) : null;
       const legacyUsage = legacyUsageRef ? await transaction.get(legacyUsageRef) : null;
-      let priorUsageCount = typeof equipment.get("usageCount") === "number"
+      let priorUsageCount = equipment.exists && typeof equipment.get("usageCount") === "number"
         ? Number(equipment.get("usageCount"))
         : 0;
-      if (typeof equipment.get("usageCount") !== "number") {
+      if (!equipment.exists || typeof equipment.get("usageCount") !== "number") {
         const priorUsage = await transaction.get(db.collection("equipmentUsage").where("equipmentId", "==", equipmentId));
         priorUsageCount = priorUsage.size;
       }
@@ -263,7 +254,7 @@ export async function startEquipmentUsage(
       transaction.create(usageRef, {
         usageId: usageRef.id,
         equipmentId,
-        equipmentName: String(equipment.get("name") ?? ""),
+        equipmentName: sourceRecord.name,
         userUid: user.uid,
         userName: String(profile.name ?? ""),
         projectId,
@@ -287,15 +278,19 @@ export async function startEquipmentUsage(
           updatedAt: now,
         }, { merge: true });
       }
-      transaction.update(equipmentRef, {
-        status: equipment.get("status") === "IN_USE"
-          ? (isSourceOutOfWork(equipment.get("currentStatus")) ? "MAINTENANCE" : "AVAILABLE")
-          : equipment.get("status"),
+      const nextEquipment = {
+        ...sourceRecord,
+        status: operationalStatus === "IN_USE"
+          ? sourceRuntimeStatus(String(sourceRecord.currentStatus ?? ""))
+          : sourceRuntimeStatus(sourceRecord.currentStatus),
+        isActive: true,
         activeUsageId: FieldValue.delete(),
         lastUsageId: usageRef.id,
         usageCount: nextUsageCount,
         updatedAt: now,
-      });
+      };
+      if (equipment.exists) transaction.update(equipmentRef, nextEquipment);
+      else transaction.create(equipmentRef, { ...nextEquipment, createdAt: now });
     });
 
     if (legacyUsageIdToSync) await syncEquipmentUsageToGoogleSheets(legacyUsageIdToSync, db);

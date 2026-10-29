@@ -16,7 +16,7 @@ export function HomepageMachineCard({ item, image }: HomepageMachineCardProps) {
     <li>
       <CardBase
         href="/facilities"
-        image={image}
+        image={image || "/images/hero/facilities-a.jpg"}
         imageAlt={`${name}${description ? ` — ${description}` : ""}`}
         badge="Machinery"
         title={name}

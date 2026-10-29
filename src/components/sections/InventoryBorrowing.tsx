@@ -39,20 +39,19 @@ export function InventoryBorrowing({ initialItems }: Props) {
   const [notice, setNotice] = useState("");
 
   const refresh = useCallback(async () => {
-    if (!user) return;
-    const result = await getInventoryData(await getIdToken());
+    const result = await getInventoryData(user ? await getIdToken() : null);
     if (!result.ok) { setError(result.error); return; }
     setError(""); setItems(result.data.items); setLoans(result.data.loans); setProjects(result.data.projects); setIsAdmin(result.data.isAdmin);
     setProjectId((current) => result.data.projects.some((project) => project.projectId === current) ? current : result.data.projects[0]?.projectId ?? "");
   }, [getIdToken, user]);
-  useEffect(() => { if (!loading && user) queueMicrotask(() => { void refresh(); }); }, [loading, refresh, user]);
+  useEffect(() => { if (!loading) queueMicrotask(() => { void refresh(); }); }, [loading, refresh]);
   useEffect(() => {
-    if (!user) return;
+    if (loading) return;
     const timer = window.setInterval(() => { if (document.visibilityState === "visible") void refresh(); }, 30_000);
     const onFocus = () => { void refresh(); };
     window.addEventListener("focus", onFocus);
     return () => { window.clearInterval(timer); window.removeEventListener("focus", onFocus); };
-  }, [refresh, user]);
+  }, [loading, refresh]);
 
   const categories = useMemo(() => ["All categories", ...Array.from(new Set(items.map((item) => item.category))).sort(),], [items]);
   const filtered = useMemo(() => {
