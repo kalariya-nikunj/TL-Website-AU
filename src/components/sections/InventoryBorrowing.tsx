@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BoxIcon, CheckCircle2Icon, Clock3Icon, RotateCcwIcon, SearchIcon } from "lucide-react";
@@ -12,26 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { formatDateTime } from "@/lib/format";
+import { InventoryItemImage } from "@/components/sections/InventoryItemImage";
 import type { InventoryItem, InventoryLoan } from "@/types/inventory";
 
 type Props = { initialItems: InventoryItem[] };
-const PHOTOS = {
-  workshop: "/images/facilities/woodworking-shop.jpg",
-  electronics: "/images/facilities/electronics-bench.jpg",
-  printing: "/images/facilities/3d-printing.jpg",
-  laser: "/images/facilities/laser-cutter.jpg",
-  fabrication: "/images/facilities/cnc-router.jpg",
-};
-
-function itemPhoto(item: InventoryItem) {
-  const name = item.name.toLowerCase();
-  const category = item.category.toLowerCase();
-  if (name.includes("laser")) return PHOTOS.laser;
-  if (name.includes("3d") || name.includes("printer")) return PHOTOS.printing;
-  if (category.includes("electrical") || category.includes("measurement")) return PHOTOS.electronics;
-  if (category.includes("consumable")) return PHOTOS.fabrication;
-  return PHOTOS.workshop;
-}
 
 function stockState(item: InventoryItem) {
   if (!item.borrowable) return { text: "Lab use only", variant: "secondary" as const };
@@ -115,7 +98,7 @@ export function InventoryBorrowing({ initialItems }: Props) {
         {notice && <StatusMessage status="success" className="mb-4">{notice}</StatusMessage>}{error && <StatusMessage status="error" className="mb-4">{error}</StatusMessage>}
         <div className="divide-y divide-border border-y border-border">
           {filtered.map((item) => { const stock = stockState(item); return <article key={item.itemId} className="grid gap-4 py-5 sm:grid-cols-[6rem_minmax(0,1fr)_auto] sm:items-center">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-primary-tint sm:w-24"><Image src={itemPhoto(item)} alt={`${item.category} workspace representing ${item.name}`} fill sizes="96px" className="object-cover" /></div>
+            <div className="aspect-[4/3] overflow-hidden rounded-lg bg-primary-tint sm:w-24"><InventoryItemImage item={item} /></div>
             <div className="min-w-0"><p className="eyebrow">{item.category}</p><div className="mt-1 flex flex-wrap items-center gap-2"><h3 className="font-display text-h4 text-ink">{item.name}</h3><Badge variant={stock.variant}>{stock.text}</Badge></div><p className="mt-1 text-small text-muted">{item.description}</p><p className="mt-2 text-xs text-muted">{item.stockNeedsReview ? "Source workbook has no confirmed count; checkout is paused until stock is verified." : `${item.totalQuantity} listed in total`}{item.sourceReference ? ` · Source ref ${item.sourceReference}` : ""}</p>{item.detailsUrl && <a href={item.detailsUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-primary underline underline-offset-4">Product details ↗</a>}</div>
             <div className="flex flex-wrap items-center gap-2 sm:justify-end">{item.borrowable && !item.stockNeedsReview && item.availableQuantity > 0 && <><label className="sr-only" htmlFor={`qty-${item.itemId}`}>Quantity for {item.name}</label><input id={`qty-${item.itemId}`} type="number" min={1} max={item.availableQuantity} value={quantities[item.itemId] ?? 1} onChange={(e) => setQuantities((q) => ({ ...q, [item.itemId]: Math.min(item.availableQuantity, Math.max(1, Number(e.target.value) || 1)) }))} className="h-8 w-16 rounded-lg border border-border bg-surface px-2 text-small" />{user ? <Button size="sm" disabled={busy === item.itemId || !projectId} onClick={() => void borrow(item)}>{busy === item.itemId ? "Recording…" : "Borrow"}</Button> : <Button asChild size="sm"><Link href={`/login?next=${encodeURIComponent("/inventory")}`}>Sign in to borrow</Link></Button>}</>}{isAdmin && item.borrowable && <div className="flex items-center gap-1"><label className="sr-only" htmlFor={`stock-${item.itemId}`}>Set stock for {item.name}</label><input id={`stock-${item.itemId}`} type="number" min={0} max={100000} value={stockValues[item.itemId] ?? item.totalQuantity} onChange={(e) => setStockValues((s) => ({ ...s, [item.itemId]: Math.max(0, Number(e.target.value) || 0) }))} className="h-8 w-16 rounded-lg border border-border bg-surface px-2 text-xs" /><Button size="xs" variant="outline" disabled={busy === item.itemId} onClick={() => void saveStock(item)}>Update stock</Button></div>}</div>
           </article>; })}
