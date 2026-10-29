@@ -107,6 +107,10 @@ export type Facility = {
   /** "Ground floor, Bay 2" */
   location?: string;
   status?: FacilityStatus;
+  /** Set for catalogue rows without a dedicated /facilities/[slug] detail page. */
+  catalogOnly?: boolean;
+  /** Product page for catalogue equipment that has an available source URL. */
+  detailsUrl?: string;
 };
 
 export type ProjectStatus = "completed" | "in-progress";

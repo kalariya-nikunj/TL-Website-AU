@@ -30,9 +30,10 @@ const BOOKING_HREF = "/help#contact";
 
 type FacilityExplorerProps = {
   facilities: Facility[];
+  imageOverrides?: Record<string, string>;
 };
 
-export function FacilityExplorer({ facilities }: FacilityExplorerProps) {
+export function FacilityExplorer({ facilities, imageOverrides = {} }: FacilityExplorerProps) {
   const baseId = useId();
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const rowRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -58,7 +59,8 @@ export function FacilityExplorer({ facilities }: FacilityExplorerProps) {
       >
         {facilities.map((facility) => {
           const open = openSlug === facility.slug;
-          const image = facility.images[0];
+          const image = imageOverrides[facility.slug] ?? facility.images[0];
+          const detailsHref = facility.detailsUrl ?? `/facilities/${facility.slug}`;
 
           return (
             <li key={facility.slug} className="border-b border-border">
@@ -133,7 +135,10 @@ export function FacilityExplorer({ facilities }: FacilityExplorerProps) {
                   >
                     <ImageGallery
                       size="compact"
-                      images={facility.images.map((src, index) => ({
+                      images={(imageOverrides[facility.slug]
+                        ? [imageOverrides[facility.slug]]
+                        : facility.images
+                      ).map((src, index) => ({
                         src,
                         alt:
                           index === 0
@@ -184,11 +189,17 @@ export function FacilityExplorer({ facilities }: FacilityExplorerProps) {
 
                       <div className="flex flex-wrap gap-3">
                         {/* The row is a summary; this is the page. */}
-                        <Button asChild size="lg" variant="outline">
-                          <Link href={`/facilities/${facility.slug}`}>
-                            View full details
-                          </Link>
-                        </Button>
+                        {(!facility.catalogOnly || facility.detailsUrl) && (
+                          <Button asChild size="lg" variant="outline">
+                            {facility.catalogOnly ? (
+                              <a href={detailsHref} target="_blank" rel="noreferrer">
+                                Product details
+                              </a>
+                            ) : (
+                              <Link href={detailsHref}>View full details</Link>
+                            )}
+                          </Button>
+                        )}
                         <Button asChild size="lg" variant="accent">
                           <Link href={BOOKING_HREF}>Book this machine</Link>
                         </Button>
