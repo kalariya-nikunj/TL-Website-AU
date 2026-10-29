@@ -6,9 +6,10 @@ import type { Facility } from "@/types";
 type FacilityCardProps = {
   facility: Facility;
   priority?: boolean;
+  imageOverride?: string;
 };
 
-export function FacilityCard({ facility, priority }: FacilityCardProps) {
+export function FacilityCard({ facility, priority, imageOverride }: FacilityCardProps) {
   /* Two is what fits on one row at the card's width — the rest of the specs
      live on the detail page. */
   const specs = facility.specs.slice(0, 2);
@@ -17,7 +18,7 @@ export function FacilityCard({ facility, priority }: FacilityCardProps) {
     <li>
       <CardBase
         href={`/facilities/${facility.slug}`}
-        image={facility.images[0]}
+        image={imageOverride ?? facility.images[0]}
         imageAlt={`${facility.name} in the Tinkerer Lab`}
         badge={facility.category}
         title={facility.name}
