@@ -85,14 +85,14 @@ export function InventoryBorrowing({ initialItems }: Props) {
     setNotice(`Stock count for ${item.name} updated.`); await refresh();
   }
 
-  return <section className="py-6 sm:py-10 md:py-14"><Container className="px-3 sm:px-6 lg:px-8">
+  return <section className="overflow-x-clip py-6 sm:py-10 md:py-14"><Container className="px-3 sm:px-6 lg:px-8">
     <div className="grid min-w-0 gap-6 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_18rem]">
       <div className="min-w-0">
         <div className="flex min-w-0 flex-col items-stretch justify-between gap-4 border-b border-border pb-5 sm:flex-row sm:items-end">
           <div><p className="eyebrow">Lab stock list</p><h2 className="mt-2 font-display text-h3 text-ink">Browse inventory</h2><p className="mt-2 text-small text-muted">{filtered.length} of {items.length} items</p></div>
           <div className="relative w-full sm:max-w-xs"><SearchIcon aria-hidden="true" className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search inventory" aria-label="Search by item name, category or details" className="min-h-11 w-full rounded-lg border border-border bg-surface px-3 py-2 pl-9 text-base text-ink placeholder:text-muted sm:min-h-10 sm:text-small" /></div>
         </div>
-        <div className="-mx-1 flex gap-2 overflow-x-auto py-4 px-1" aria-label="Filter by category">{categories.map((entry) => <Button key={entry} size="sm" variant={category === entry ? "secondary" : "outline"} className="min-h-10 px-3 sm:min-h-7 sm:px-2.5" onClick={() => setCategory(entry)}>{entry}</Button>)}</div>
+        <div className="-mx-1 flex w-full min-w-0 max-w-full gap-2 overflow-x-auto py-4 px-1" aria-label="Filter by category">{categories.map((entry) => <Button key={entry} size="sm" variant={category === entry ? "secondary" : "outline"} className="min-h-10 px-3 sm:min-h-7 sm:px-2.5" onClick={() => setCategory(entry)}>{entry}</Button>)}</div>
         {user && <div className="mb-4 max-w-lg"><label htmlFor="inventory-project" className="text-small font-medium text-ink">Project for this borrowing</label>{projects.length ? <select id="inventory-project" value={projectId} onChange={(event) => setProjectId(event.target.value)} className="mt-2 min-h-11 w-full rounded-lg border border-border bg-surface px-3 py-2 text-base text-ink sm:min-h-10 sm:text-small">{projects.map((project) => <option key={project.projectId} value={project.projectId}>{project.title}</option>)}</select> : <p className="mt-2 text-small text-muted">Join or create a project before borrowing inventory.</p>}</div>}
         {notice && <StatusMessage status="success" className="mb-4">{notice}</StatusMessage>}{error && <StatusMessage status="error" className="mb-4">{error}</StatusMessage>}
         <div className="divide-y divide-border border-y border-border">

@@ -205,7 +205,7 @@ export function Header({ variant }: HeaderProps) {
 
       <header
         className={cn(
-          "fixed inset-x-0 top-0 z-40 transition-colors duration-300 ease-out",
+          "fixed inset-x-0 top-0 z-40 w-full min-w-0 transition-colors duration-300 ease-out",
           surface,
         )}
         onMouseLeave={scheduleClose}
