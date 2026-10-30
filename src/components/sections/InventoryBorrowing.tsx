@@ -37,6 +37,7 @@ export function InventoryBorrowing({ initialItems }: Props) {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [mobileSection, setMobileSection] = useState<"browse" | "borrowings">("browse");
 
   const refresh = useCallback(async () => {
     const result = await getInventoryData(user ? await getIdToken() : null);
@@ -86,8 +87,12 @@ export function InventoryBorrowing({ initialItems }: Props) {
   }
 
   return <section className="overflow-x-clip py-6 sm:py-10 md:py-14"><Container className="px-3 sm:px-6 lg:px-8">
+    <div role="tablist" aria-label="Inventory sections" className="sticky top-20 z-20 mb-5 grid grid-cols-2 rounded-lg border border-border bg-surface p-1 lg:hidden">
+      <button type="button" role="tab" aria-selected={mobileSection === "browse"} aria-controls="inventory-browse-panel" onClick={() => setMobileSection("browse")} className={`min-h-11 rounded-md px-3 text-sm font-medium transition-colors ${mobileSection === "browse" ? "bg-primary text-surface" : "text-ink hover:bg-primary-tint"}`}>Browse inventory</button>
+      <button type="button" role="tab" aria-selected={mobileSection === "borrowings"} aria-controls="inventory-borrowings-panel" onClick={() => setMobileSection("borrowings")} className={`min-h-11 rounded-md px-3 text-sm font-medium transition-colors ${mobileSection === "borrowings" ? "bg-primary text-surface" : "text-ink hover:bg-primary-tint"}`}>My borrowings ({active.length})</button>
+    </div>
     <div className="grid min-w-0 gap-6 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_18rem]">
-      <div className="min-w-0">
+      <div id="inventory-browse-panel" role="tabpanel" aria-label="Browse inventory" className={`min-w-0 ${mobileSection === "browse" ? "block" : "hidden"} lg:block`}>
         <div className="flex min-w-0 flex-col items-stretch justify-between gap-4 border-b border-border pb-5 sm:flex-row sm:items-end">
           <div><p className="eyebrow">Lab stock list</p><h2 className="mt-2 font-display text-h3 text-ink">Browse inventory</h2><p className="mt-2 text-small text-muted">{filtered.length} of {items.length} items</p></div>
           <div className="relative w-full sm:max-w-xs"><SearchIcon aria-hidden="true" className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search inventory" aria-label="Search by item name, category or details" className="min-h-11 w-full rounded-lg border border-border bg-surface px-3 py-2 pl-9 text-base text-ink placeholder:text-muted sm:min-h-10 sm:text-small" /></div>
@@ -105,7 +110,7 @@ export function InventoryBorrowing({ initialItems }: Props) {
         </div>
       </div>
 
-      <aside className="h-fit rounded-lg border border-border bg-surface p-5 lg:sticky lg:top-24">
+      <aside id="inventory-borrowings-panel" role="tabpanel" aria-label="My borrowings" className={`h-fit rounded-lg border border-border bg-surface p-5 ${mobileSection === "borrowings" ? "block" : "hidden"} lg:sticky lg:top-24 lg:block`}>
         <div className="flex items-center gap-2"><BoxIcon aria-hidden="true" className="size-5 text-primary" /><h2 className="font-display text-h4 text-ink">My borrowings</h2></div>
         {loading ? <div className="mt-5 h-20 animate-pulse rounded-lg bg-primary-tint" /> : !user ? <div className="mt-4"><p className="text-small text-muted">Sign in with your Ahmedabad University account to borrow items and view your history.</p><Button asChild className="mt-4"><Link href={`/login?next=${encodeURIComponent("/inventory")}`}>Sign in</Link></Button></div> : <>
           <p className="mt-2 text-xs text-muted">Borrowing immediately records your university account, selected project, item and quantity. You can record the return here.</p>
