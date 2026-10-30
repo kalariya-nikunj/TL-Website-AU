@@ -20,7 +20,7 @@ import { getUpcomingEvents } from "@/content/events";
 import { news } from "@/content/news";
 import { featuredProjects } from "@/content/projects";
 import { site, stats } from "@/content/site";
-import { team } from "@/content/team";
+import { committee } from "@/content/committee";
 const homepageFacilityPhotos: Record<string, string> = {
   "laser-cutter": "/images/home-facilities/laser-cutter.jpg",
   "3d-printing": "/images/home-facilities/3d-printing.jpg",
@@ -200,7 +200,7 @@ export default async function HomePage() {
           />
         </Container>
 
-        <TeamRail members={team} ariaLabel="The Tinkerer Lab team" />
+        <TeamRail members={committee} ariaLabel="The Tinkerer Lab committee" />
       </Section>
 
       {/* 9. Closing CTA — the second dark anchor. */}
