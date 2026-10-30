@@ -3,13 +3,13 @@ import type { TeamMember } from "@/types";
 /** Student committee profiles shown on the homepage. */
 export const committee: TeamMember[] = [
   {
-    id: "nikunj-kalariya",
-    name: "Nikunj Kalariya",
+    id: "neev-patel",
+    name: "Neev Hiteshkumar Patel",
     role: "TL Committee",
-    photo: "/images/team/nikunj-kalariya.png",
+    photo: "/images/team/neev-patel.png",
     links: [
-      { label: "Email", url: "mailto:nikunj.k@ahduni.edu.in" },
-      { label: "Instagram", url: "https://www.instagram.com/ll_royal___king_ll?igsh=cjI0eTJocHFhYnFs" },
+      { label: "Email", url: "mailto:neev.p@ahduni.edu.in" },
+      { label: "Instagram", url: "https://www.instagram.com/neevpatel_018" },
     ],
   },
   {
@@ -23,13 +23,13 @@ export const committee: TeamMember[] = [
     ],
   },
   {
-    id: "neev-patel",
-    name: "Neev Hiteshkumar Patel",
+    id: "nikunj-kalariya",
+    name: "Nikunj Kalariya",
     role: "TL Committee",
-    photo: "/images/team/neev-patel.png",
+    photo: "/images/team/nikunj-kalariya.png",
     links: [
-      { label: "Email", url: "mailto:neev.p@ahduni.edu.in" },
-      { label: "Instagram", url: "https://www.instagram.com/neevpatel_018" },
+      { label: "Email", url: "mailto:nikunj.k@ahduni.edu.in" },
+      { label: "Instagram", url: "https://www.instagram.com/ll_royal___king_ll?igsh=cjI0eTJocHFhYnFs" },
     ],
   },
   {
