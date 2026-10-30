@@ -11,7 +11,7 @@ import { SectionHeader } from "@/components/sections/SectionHeader";
 import { StatBand } from "@/components/sections/StatBand";
 import { TeamRail } from "@/components/sections/TeamRail";
 import { contact, site, stats } from "@/content/site";
-import { team } from "@/content/team";
+import { committee } from "@/content/committee";
 
 export const metadata: Metadata = {
   title: "About",
@@ -137,7 +137,7 @@ export default function AboutPage() {
           />
         </Container>
 
-        <TeamRail members={team} ariaLabel="The Tinkerer Lab team" />
+        <TeamRail members={committee} ariaLabel="The Tinkerer Lab committee" />
       </Section>
 
       {/* 6. Visit us */}
