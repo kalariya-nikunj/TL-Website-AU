@@ -23,7 +23,7 @@ import { Container } from "@/components/layout/Container";
 
 /** Where the assets live. See public/video/README.md for encoding settings. */
 const VIDEO_SRC = "/video/hero.mp4";
-const POSTER_SRC = "/images/hero-poster.jpg";
+const POSTER_SRC = "/images/hero-poster-current.jpg";
 
 /**
  * Mobile bandwidth guard. The poster carries the effect below `md` and the

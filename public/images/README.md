@@ -3,9 +3,9 @@
 Subfolders (`team/`, `facilities/`, `projects/`) hold content photography — see
 the README in each. This note covers the assets the layout itself needs.
 
-## `hero-poster.jpg` — homepage hero poster
+## `hero-poster-current.jpg` — homepage hero poster
 
-Frame 0 of `public/video/hero.mp4`, 1920 × 1080. It is the page's LCP element
+Frame 0 of `public/video/hero.mp4`, extracted from the current encode. It is the page's LCP element
 and is what carries the hero on mobile, where the video is not loaded at all.
 Encoding instructions live in `public/video/README.md`.
 

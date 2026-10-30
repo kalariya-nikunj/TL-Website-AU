@@ -6,7 +6,7 @@
 `/video/hero.mp4`, which is the constant `VIDEO_SRC` in
 `src/components/sections/VideoHero.tsx`.
 
-A matching poster goes at **`public/images/hero-poster.jpg`**. The poster is the
+A matching poster goes at **`public/images/hero-poster-current.jpg`**. The poster is the
 page's LCP element and is what renders on mobile, so it matters more than the
 video — grab it from frame 0 of the final encode so the handoff is invisible.
 
@@ -47,7 +47,7 @@ pull toward 24 only if banding shows in flat areas.
 Poster from the first frame of the finished encode:
 
 ```sh
-ffmpeg -i public/video/hero.mp4 -vframes 1 -q:v 2 public/images/hero-poster.jpg
+ffmpeg -i public/video/hero.mp4 -vframes 1 -q:v 2 public/images/hero-poster-current.jpg
 ```
 
 ### The mobile switch
