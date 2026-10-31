@@ -22,9 +22,7 @@ export const facilities: Facility[] = [
       "Extraction must be on before a job starts.",
     ],
     images: [
-      "/images/facilities/laser-cutter.jpg",
-      "/images/facilities/laser-cutter-2.jpg",
-      "/images/facilities/laser-cutter-3.jpg",
+      "/images/home-machineries/co2-laser-cutter-succes-stl43.jpg",
     ],
     requiresTraining: true,
     makes: [
@@ -73,9 +71,9 @@ export const facilities: Facility[] = [
       "Do not open a printer mid-job.",
     ],
     images: [
-      "/images/facilities/3d-printing.jpg",
-      "/images/facilities/3d-printing-2.jpg",
-      "/images/facilities/3d-printing-3.jpg",
+      "/images/home-machineries/3d-printer-bambu-x1c.png",
+      "/images/home-machineries/3d-printer-ender-3v3.webp",
+      "/images/home-machineries/resin-3d-printer-phrozen-12k.jpg",
     ],
     requiresTraining: false,
   },
