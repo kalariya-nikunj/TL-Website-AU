@@ -13,6 +13,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { AuthButton } from "@/components/layout/AuthButton";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { checkMySuperadminAccess } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -73,6 +75,8 @@ type HeaderProps = {
 };
 
 export function Header({ variant }: HeaderProps) {
+  const { user, loading: authLoading, getIdToken } = useAuth();
+  const [showAdmin, setShowAdmin] = useState(false);
   const pathname = usePathname();
   const mode = variant ?? (pathname === "/" ? "over-hero" : "solid");
 
@@ -87,6 +91,16 @@ export function Header({ variant }: HeaderProps) {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const panelId = useId();
+
+  useEffect(() => {
+    let cancelled = false;
+    if (authLoading || !user) return;
+    void getIdToken().then(async (token) => {
+      const result = await checkMySuperadminAccess(token);
+      if (!cancelled) setShowAdmin(result.ok && result.data);
+    }).catch(() => { if (!cancelled) setShowAdmin(false); });
+    return () => { cancelled = true; };
+  }, [authLoading, getIdToken, user]);
 
   const panelOpen = openIndex !== null;
   const compact = scrolled;
@@ -330,6 +344,7 @@ export function Header({ variant }: HeaderProps) {
               open={mobileOpen}
               onOpenChange={setMobileOpen}
               tone={navColor}
+              showAdmin={showAdmin}
             />
           </div>
         </Container>
@@ -390,10 +405,12 @@ function MobileMenu({
   open,
   onOpenChange,
   tone,
+  showAdmin,
 }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
   tone: string;
+  showAdmin: boolean;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -446,6 +463,14 @@ function MobileMenu({
             )}
           </Accordion>
         </nav>
+
+        {showAdmin && (
+          <div className="px-4 pb-3">
+            <Link href="/admin" onClick={() => onOpenChange(false)} className="flex h-12 items-center border-b border-border font-display text-base font-semibold text-primary hover:text-primary-dark">
+              Admin Panel
+            </Link>
+          </div>
+        )}
 
         <div className="border-t border-border p-4">
           <AuthButton layout="mobile" onInteract={() => onOpenChange(false)} />

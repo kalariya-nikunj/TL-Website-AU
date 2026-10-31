@@ -29,16 +29,20 @@ function serializeItem(source: InventoryItem, data: DocumentData | undefined, ac
     && Number.isInteger(data.stockOverrideTotalQuantity);
   const totalQuantity = stockOverrideMatches ? Number(data.stockOverrideTotalQuantity) : source.totalQuantity;
   const sourceAvailable = stockOverrideMatches ? totalQuantity : source.availableQuantity;
+  const borrowable = stockOverrideMatches && typeof data?.stockOverrideBorrowable === "boolean"
+    ? data.stockOverrideBorrowable : source.borrowable;
+  const stockNeedsReview = stockOverrideMatches
+    ? (typeof data?.stockOverrideNeedsReview === "boolean" ? data.stockOverrideNeedsReview : false)
+    : source.stockNeedsReview;
   return {
     ...source,
     totalQuantity,
     availableQuantity: Math.max(0, Math.min(totalQuantity, sourceAvailable) - activeQuantity),
-    ...(stockOverrideMatches
-      ? {
-          stockNeedsReview: false,
-          sourceStatus: typeof data?.sourceStatus === "string" ? data.sourceStatus : source.sourceStatus,
-        }
-      : {}),
+    borrowable,
+    stockNeedsReview,
+    ...(stockOverrideMatches && typeof data?.stockOverrideStatus === "string"
+      ? { sourceStatus: data.stockOverrideStatus }
+      : stockOverrideMatches ? { sourceStatus: "Stock confirmed by lab administrator" } : {}),
   };
 }
 
@@ -124,7 +128,7 @@ export async function getInventoryData(idToken: string | null): Promise<ActionRe
     const items = catalog.map((item) => serializeItem(item, persistedItems.get(item.itemId), activeQuantityByItem.get(item.itemId) ?? 0));
     const loans = loansSnapshot?.docs
       .map((document) => serializeLoan(document.data(), document.id))
-      .sort((a, b) => (b.requestedAt || b.borrowedAt).localeCompare(a.requestedAt || a.borrowedAt)) ?? [];
+      .sort((a, b) => (b.requestedAt || b.borrowedAt || "").localeCompare(a.requestedAt || a.borrowedAt || "")) ?? [];
     return { items, loans, projects, signedIn: Boolean(uid), isAdmin };
   });
 }
@@ -157,7 +161,8 @@ export async function borrowInventoryItem(
         transaction.get(itemRef), transaction.get(projectRef), transaction.get(memberRef),
         transaction.get(db.collection("inventoryLoans").where("itemId", "==", itemId)),
       ]);
-      const authorizedProject = project.exists && (project.get("ownerUid") === user.uid || member.exists && member.get("uid") === user.uid && ["OWNER", "MEMBER"].includes(String(member.get("role"))));
+      const authorizedProject = project.exists && project.get("status") !== "DELETING"
+        && (project.get("ownerUid") === user.uid || member.exists && member.get("uid") === user.uid && ["OWNER", "MEMBER"].includes(String(member.get("role"))));
       if (!authorizedProject) throw new AuthError("Choose a project you own or belong to.");
       projectTitle = String(project.get("title") ?? "");
       const storedItem = itemSnapshot.data();
@@ -169,8 +174,11 @@ export async function borrowInventoryItem(
         .filter((loan) => ["REQUESTED", "BORROWED", "APPROVED"].includes(String(loan.get("status"))))
         .reduce((sum, loan) => sum + (Number(loan.get("quantity")) || 0), 0);
       const available = Math.max(0, Math.min(total, baseAvailable) - activeQuantity);
-      const borrowable = source.borrowable;
-      const needsReview = source.stockNeedsReview;
+      const borrowable = stockOverrideMatches && typeof storedItem?.stockOverrideBorrowable === "boolean"
+        ? storedItem.stockOverrideBorrowable : source.borrowable;
+      const needsReview = stockOverrideMatches
+        ? (typeof storedItem?.stockOverrideNeedsReview === "boolean" ? storedItem.stockOverrideNeedsReview : false)
+        : source.stockNeedsReview;
       if (!borrowable || needsReview) throw new AuthError("This item is not available to borrow yet; please ask lab staff to confirm its stock.");
       if (quantity > available) throw new AuthError(`Only ${available} ${available === 1 ? "unit is" : "units are"} available.`);
       if (!itemSnapshot.exists) {
@@ -190,19 +198,16 @@ export async function borrowInventoryItem(
         itemName: source.name,
         category: source.category,
         quantity,
-        status: "BORROWED",
+        status: "REQUESTED",
         userUid: user.uid,
         userEmail: user.email ?? "",
         userName: user.name ?? (user.email ?? "Student").split("@")[0],
         projectId,
         projectTitle,
         requestedAt: now,
-        // Checkout is self-service, so the implicit approval time is the
-        // same as the borrowing time. This also keeps the existing Sheets
-        // "Approved at" column populated until the sheet schema is deployed.
-        approvedAt: now,
+        approvedAt: null,
         approvedByEmail: "",
-        borrowedAt: now,
+        borrowedAt: null,
         returnedAt: null,
       });
       enqueueSheetRecord(transaction, db, "loan", loanRef.id);
@@ -220,12 +225,10 @@ export async function borrowInventoryItem(
       itemName: source.name,
       category: source.category,
       quantity,
-      status: "BORROWED",
+      status: "REQUESTED",
       projectId,
       projectTitle,
       requestedAt: new Date().toISOString(),
-      approvedAt: new Date().toISOString(),
-      borrowedAt: new Date().toISOString(),
     };
   });
 }
@@ -245,7 +248,12 @@ export async function returnInventoryItem(
 
     await db.runTransaction(async (transaction) => {
       const loan = await transaction.get(loanRef);
-      const isAdmin = isInventoryAdmin(user.email);
+      const adminRole = await transaction.get(db.collection("adminUsers").doc(user.uid));
+      const hasAdminRole = adminRole.get("active") === true && (
+        adminRole.get("role") === "superadmin"
+        || adminRole.get("role") === "admin" && Array.isArray(adminRole.get("permissions")) && adminRole.get("permissions").includes("borrowings.manage")
+      );
+      const isAdmin = isInventoryAdmin(user.email) || hasAdminRole;
       if (!loan.exists || (loan.get("userUid") !== user.uid && !isAdmin)) throw new AuthError("Borrowing record not found.");
       if (!["BORROWED", "APPROVED"].includes(String(loan.get("status")))) throw new AuthError("Only an active borrowing can be returned.");
       const itemId = String(loan.get("itemId") ?? "");

@@ -20,6 +20,7 @@ function toIso(value: unknown): string {
 
 function sourceRuntimeStatus(currentStatus: string): EquipmentStatus {
   const normalized = currentStatus.trim().toLowerCase();
+  if (normalized === "disabled") return "DISABLED";
   if (isSourceOutOfWork(normalized)) return "MAINTENANCE";
   // An empty status was treated as available by the existing equipment flow.
   // Keep that behavior while recognizing explicit maintenance states from Sheets.
@@ -30,9 +31,15 @@ function sourceRuntimeStatus(currentStatus: string): EquipmentStatus {
 
 function serializeMasterEquipment(record: MasterEquipment, persisted?: DocumentData): Equipment {
   const sheetStatus = sourceRuntimeStatus(record.currentStatus);
+  const adminStatus = persisted?.adminStatusOverride;
+  const runtimeStatus: EquipmentStatus = sheetStatus === "MAINTENANCE"
+    ? "MAINTENANCE"
+    : adminStatus === "AVAILABLE" || adminStatus === "MAINTENANCE" || adminStatus === "DISABLED"
+      ? adminStatus
+      : persisted?.status === "IN_USE" ? "IN_USE" : sheetStatus;
   return {
     ...record,
-    status: sheetStatus === "MAINTENANCE" ? sheetStatus : persisted?.status === "IN_USE" ? "IN_USE" : sheetStatus,
+    status: runtimeStatus,
     isActive: true,
     ...(typeof persisted?.activeUsageId === "string" ? { activeUsageId: persisted.activeUsageId } : {}),
     ...(typeof persisted?.lastUsageId === "string" ? { lastUsageId: persisted.lastUsageId } : {}),
@@ -219,17 +226,20 @@ export async function startEquipmentUsage(
         transaction.get(projectRef),
         transaction.get(memberRef),
       ]);
-      if (!project.exists || (project.get("ownerUid") !== user.uid && (
+      if (!project.exists || project.get("status") === "DELETING" || (project.get("ownerUid") !== user.uid && (
         !member.exists || member.get("uid") !== user.uid || !["OWNER", "MEMBER"].includes(String(member.get("role")))
       ))) {
         throw new AuthError("You do not have permission to use this project.");
       }
       if (isSourceOutOfWork(sourceRecord.currentStatus)
-        || equipment.exists && equipment.get("status") === "DISABLED") {
+        || equipment.exists && ["DISABLED", "MAINTENANCE"].includes(String(equipment.get("adminStatusOverride") ?? equipment.get("status")))) {
         throw new AuthError("This equipment is currently unavailable.");
       }
+      const adminOverride = equipment.get("adminStatusOverride");
       const operationalStatus = equipment.exists
-        ? equipment.get("status") === "IN_USE" ? "IN_USE" : sourceRuntimeStatus(sourceRecord.currentStatus)
+        ? equipment.get("status") === "IN_USE" ? "IN_USE"
+          : ["AVAILABLE", "MAINTENANCE", "DISABLED"].includes(String(adminOverride)) ? adminOverride as EquipmentStatus
+          : sourceRuntimeStatus(sourceRecord.currentStatus)
         : sourceRuntimeStatus(sourceRecord.currentStatus);
       if (operationalStatus !== "AVAILABLE" && operationalStatus !== "IN_USE") {
         throw new AuthError("This equipment is currently unavailable.");
@@ -314,8 +324,14 @@ export async function endEquipmentUsage(
 
     await db.runTransaction(async (transaction) => {
       const usage = await transaction.get(usageRef);
+      const adminRole = await transaction.get(db.collection("adminUsers").doc(user.uid));
+      const canManageUsage = adminRole.get("active") === true && (
+        adminRole.get("role") === "superadmin"
+        || adminRole.get("role") === "admin" && Array.isArray(adminRole.get("permissions")) && adminRole.get("permissions").includes("equipmentUsage.manage")
+      );
       if (!usage.exists) throw new AuthError("This usage session could not be found.");
-      if (usage.get("userUid") !== user.uid) throw new AuthError("You do not have permission to end this usage session.");
+      const isOwner = usage.get("userUid") === user.uid;
+      if (!isOwner && !canManageUsage) throw new AuthError("You do not have permission to end this usage session.");
       if (usage.get("status") !== "ACTIVE") throw new AuthError("This usage session has already ended.");
 
       const equipmentId = String(usage.get("equipmentId") ?? "");
@@ -327,13 +343,17 @@ export async function endEquipmentUsage(
       }
 
       const now = FieldValue.serverTimestamp();
-      const nextEquipmentStatus = isSourceOutOfWork(equipment.get("currentStatus")) ? "MAINTENANCE" : "AVAILABLE";
+      const adminStatus = equipment.get("adminStatusOverride");
+      const sourceStatus = String(equipment.get("currentStatus") ?? "");
+      const nextEquipmentStatus = sourceStatus.trim().toLowerCase() === "disabled" ? "DISABLED"
+        : isSourceOutOfWork(sourceStatus) ? "MAINTENANCE"
+        : ["AVAILABLE", "MAINTENANCE", "DISABLED"].includes(String(adminStatus)) ? adminStatus : "AVAILABLE";
       transaction.update(usageRef, {
         status: "COMPLETED",
         endedAt: now,
         endedByUid: user.uid,
         endedByEmail: user.email ?? "",
-        endReason: "STUDENT_ENDED",
+        endReason: isOwner ? "STUDENT_ENDED" : "ADMIN_RESOLVED",
         updatedAt: now,
       });
       transaction.set(sheetOutboxRef, { status: "PENDING", version: FieldValue.increment(1), updatedAt: now }, { merge: true });

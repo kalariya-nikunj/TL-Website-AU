@@ -29,7 +29,7 @@ export type InventoryLoan = {
   requestedAt: string;
   approvedAt?: string;
   approvedByEmail?: string;
-  borrowedAt: string;
+  borrowedAt?: string;
   returnedAt?: string;
 };
 

@@ -18,6 +18,7 @@ const SHEET_GIDS = {
 type SheetKey = keyof typeof SHEET_GIDS;
 export type LiveEquipmentMaster = Omit<Equipment, "status" | "isActive"> & {
   currentStatus: string;
+  sourceRow: number;
 };
 
 function parseCsv(csv: string): string[][] {
@@ -223,6 +224,7 @@ function parseEquipmentMaster(rows: string[][], knownIds: Map<number, string>): 
     const detailsUrl = at(row, 5);
     records.push({
       equipmentId,
+      sourceRow: index + 1,
       ...(srNo ? { srNo } : {}),
       name,
       ...(manufacturer ? { manufacturer } : {}),

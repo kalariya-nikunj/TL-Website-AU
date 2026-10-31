@@ -342,7 +342,7 @@ export async function updateProject(
     );
     await db.runTransaction(async (transaction) => {
       const project = await transaction.get(ref);
-      if (!project.exists || project.get("ownerUid") !== user.uid) {
+      if (!project.exists || project.get("status") === "DELETING" || project.get("ownerUid") !== user.uid) {
         throw new AuthError("You do not have permission to edit this project.");
       }
       transaction.update(ref, { ...fields, ...clearMissing, updatedAt: FieldValue.serverTimestamp() });
@@ -428,7 +428,7 @@ export async function addProjectMember(
         transaction.get(profileRef),
         transaction.get(memberRef),
       ]);
-      if (!project.exists || project.get("ownerUid") !== user.uid) {
+      if (!project.exists || project.get("status") === "DELETING" || project.get("ownerUid") !== user.uid) {
         throw new AuthError("Only the project owner can add team members.");
       }
       if (targetUid === project.get("ownerUid")) throw new AuthError("The project owner is already on the team.");
@@ -467,7 +467,7 @@ export async function removeProjectMember(
     await db.runTransaction(async (transaction) => {
       const project = await transaction.get(projectRef);
       const member = await transaction.get(memberRef);
-      if (!project.exists || project.get("ownerUid") !== user.uid) {
+      if (!project.exists || project.get("status") === "DELETING" || project.get("ownerUid") !== user.uid) {
         throw new AuthError("Only the project owner can remove team members.");
       }
       if (targetUid === project.get("ownerUid")) throw new AuthError("The project owner cannot be removed.");

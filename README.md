@@ -120,6 +120,32 @@ holding the machine in an `IN_USE` state until someone ends a session. A
 student-facing equipment page has no End Usage button. If a webhook is
 temporarily unavailable, its outbox entry remains queued in Firestore.
 
+The admin panel's machine editor uses the same secret-protected Web App. To
+enable those edits, deploy the current `scripts/equipment-usage-sheets.gs`
+version and set the Apps Script property
+`MACHINERY_CATALOG_SPREADSHEET_ID` to
+`1pLU19yBwdiKiqIwnYh2HzStN6FM74oL-uc__ABwNayU`. The endpoint updates the
+existing machinery row only after verifying both its row number and serial
+number. Until that Apps Script version is deployed, machine edits fail with an
+error and the existing read and usage flows remain unchanged.
+
+Inventory catalog descriptions and product links use the same endpoint. Set
+`INVENTORY_CATALOG_SPREADSHEET_ID` to that same workbook ID in Apps Script.
+The writer uses category-specific sheet IDs and checks the item name and source
+reference before updating a row. Categories without a reliable description or
+link column keep those fields read-only. The admin panel can also create items
+in the supported inventory tabs; fixed machinery stays in the equipment editor.
+Consumables are created with stock requiring a physical count, then quantity is
+confirmed with the existing stock control. Updating or creating a catalog
+entry requires the updated Apps Script deployment first.
+
+Admin deletion actions keep an audit entry. Active borrowing records must be
+returned before deletion; deleting a pending request recalculates reserved
+stock. Projects with linked borrowing or equipment-usage history must have that
+history removed first. Inventory and equipment-usage deletion is queued for
+the corresponding Google Sheets row, so keep the Apps Script Web App deployed
+and its shared secret configured for the deletions to reach Sheets.
+
 ---
 
 ## Scripts

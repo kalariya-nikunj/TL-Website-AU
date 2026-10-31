@@ -59,7 +59,26 @@ export async function syncInventorySheetsRecord(outboxId: string, db: Firestore 
     const version = Number(outbox.get("version") ?? 0);
     const kind = outbox.get("kind");
     const resourceId = String(outbox.get("resourceId") ?? "");
-    if (!resourceId || (kind !== "loan" && kind !== "item")) throw new Error("Invalid inventory Sheets outbox record.");
+    if (!resourceId || (kind !== "loan" && kind !== "item" && kind !== "loanDelete")) throw new Error("Invalid inventory Sheets outbox record.");
+
+    if (kind === "loanDelete") {
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ secret: sharedSecret, inventoryDelete: { kind: "loan", id: resourceId, version } }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(8_000),
+      });
+      const result = await response.json().catch(() => null) as { ok?: unknown } | null;
+      if (!response.ok || result?.ok !== true) throw new Error(`Sheets endpoint rejected inventory deletion (HTTP ${response.status}).`);
+      await db.runTransaction(async (transaction) => {
+        const latest = await transaction.get(outboxRef);
+        if (Number(latest.get("version") ?? 0) === version) {
+          transaction.update(outboxRef, { status: "SYNCED", syncedAt: new Date(), lastError: "" });
+        }
+      });
+      return;
+    }
 
     const resourceRef = db.collection(kind === "loan" ? "inventoryLoans" : "inventoryItems").doc(resourceId);
     const resource = await resourceRef.get();

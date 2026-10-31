@@ -60,6 +60,26 @@ export async function syncEquipmentUsageToGoogleSheets(usageId: string, db?: Fir
     const version = Number(outbox.get("version") ?? 0);
 
     try {
+      if (outbox.get("kind") === "DELETE") {
+        const response = await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ secret: sharedSecret, usageDelete: { usageId, version } }),
+          cache: "no-store",
+          signal: AbortSignal.timeout(5_000),
+        });
+        const responseData = await response.json().catch(() => null) as { ok?: unknown } | null;
+        if (!response.ok || responseData?.ok !== true) {
+          throw new Error(`Google Sheets webhook rejected the usage deletion (HTTP ${response.status}).`);
+        }
+        await database.runTransaction(async (transaction) => {
+          const latest = await transaction.get(outboxRef);
+          if (Number(latest.get("version") ?? 0) === version) {
+            transaction.update(outboxRef, { status: "SYNCED", syncedAt: new Date(), lastError: "" });
+          }
+        });
+        return;
+      }
       const usage = await database.collection("equipmentUsage").doc(usageId).get();
       if (!usage.exists) throw new Error("Usage record is unavailable.");
       const response = await fetch(webhookUrl, {

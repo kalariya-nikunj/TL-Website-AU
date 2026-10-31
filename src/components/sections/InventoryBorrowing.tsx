@@ -61,7 +61,7 @@ export function InventoryBorrowing({ initialItems }: Props) {
       && (!q || [item.name, item.category, item.description, item.sourceReference].some((value) => value.toLocaleLowerCase().includes(q))))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [category, items, search]);
-  const active = loans.filter((loan) => loan.status === "BORROWED" || loan.status === "APPROVED");
+  const active = loans.filter((loan) => loan.status === "REQUESTED" || loan.status === "BORROWED" || loan.status === "APPROVED");
   const returned = loans.filter((loan) => loan.status === "RETURNED");
 
   async function borrow(item: InventoryItem) {
@@ -69,7 +69,7 @@ export function InventoryBorrowing({ initialItems }: Props) {
     const result = await borrowInventoryItem(await getIdToken(), item.itemId, quantities[item.itemId] ?? 1, projectId);
     setBusy("");
     if (!result.ok) { setError(result.error); await refresh(); return; }
-    setNotice(`${result.data.quantity} × ${item.name} checked out and recorded.`); await refresh();
+    setNotice(`${result.data.quantity} × ${item.name} request submitted. It will be available after admin approval.`); await refresh();
   }
   async function returnItem(loan: InventoryLoan) {
     setBusy(loan.loanId); setError(""); setNotice("");
