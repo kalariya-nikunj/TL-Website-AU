@@ -74,6 +74,8 @@ export type FacilityStatus = "available" | "maintenance" | "retired";
 
 export type Facility = {
   slug: string;
+  /** Exact equipment record opened by this facility's booking action. */
+  equipmentId?: string;
   name: string;
   category: string;
   shortDescription: string;

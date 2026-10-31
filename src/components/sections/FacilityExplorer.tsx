@@ -23,12 +23,6 @@ import type { Facility } from "@/types";
  * measured height, so nothing has to know how tall the content is.
  */
 
-/**
- * Booking is Phase 4. Until it exists the accent button goes where a student
- * can actually reach someone — one constant to repoint when it lands.
- */
-const BOOKING_HREF = "/help#contact";
-
 type FacilityExplorerProps = {
   facilities: Facility[];
   imageOverrides?: Record<string, string>;
@@ -225,9 +219,13 @@ export function FacilityExplorer({ facilities, imageOverrides = {} }: FacilityEx
                             )}
                           </Button>
                         )}
-                        <Button asChild size="lg" variant="accent">
-                          <Link href={BOOKING_HREF}>Book this machine</Link>
-                        </Button>
+                        {facility.equipmentId && (
+                          <Button asChild size="lg" variant="accent">
+                            <Link href={`/equipment/${encodeURIComponent(facility.equipmentId)}`}>
+                              Book this machine
+                            </Link>
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>

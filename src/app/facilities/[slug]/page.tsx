@@ -25,9 +25,6 @@ import { projects } from "@/content/projects";
 import { site } from "@/content/site";
 import type { FacilityStatus } from "@/types";
 
-/** Booking lands in Phase 4. One constant to repoint when it does. */
-const BOOKING_HREF = "/help#contact";
-
 const STATUS: Record<
   FacilityStatus,
   { tone: "success" | "warning" | "muted"; label: string }
@@ -214,9 +211,13 @@ export default async function FacilityPage({ params }: PageProps) {
               </div>
             )}
 
-            <Button asChild size="lg" variant="accent" className="w-full">
-              <Link href={BOOKING_HREF}>Book this machine</Link>
-            </Button>
+            {facility.equipmentId && (
+              <Button asChild size="lg" variant="accent" className="w-full">
+                <Link href={`/equipment/${encodeURIComponent(facility.equipmentId)}`}>
+                  Book this machine
+                </Link>
+              </Button>
+            )}
           </aside>
         </div>
       </Section>

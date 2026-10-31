@@ -4,6 +4,7 @@ import type { Facility } from "@/types";
 export const facilities: Facility[] = [
   {
     slug: "laser-cutter",
+    equipmentId: "succes-stl43-co2-laser",
     name: "Laser Cutter",
     category: "Fabrication",
     shortDescription:
