@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
+import type { StaticImageData } from "next/image";
 import { CalendarPlusIcon } from "lucide-react";
 
+import threeDPrintingPoster from "./3d-printing/3D_PRINTINIG_WORKSHOP.png";
+import clubCarnivalPoster from "./Club_Carnival/CLUB_CARNIVAL_POSTER.png";
+import pcbDesigningPoster from "./pcb-designing/PCB_DESIGNING_WORKSHOP.png";
 import { CTASection } from "@/components/sections/CTASection";
-import { EventList } from "@/components/sections/EventList";
 import { PageHero } from "@/components/sections/PageHero";
 import { Section } from "@/components/sections/Section";
 import { SectionHeader } from "@/components/sections/SectionHeader";
 import { getAllEvents } from "@/content/events";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { formatEventRange } from "@/lib/format";
+import { WorkshopEventList } from "./WorkshopEventList";
 
 export const metadata: Metadata = {
   title: "Workshops & events",
@@ -18,6 +22,36 @@ export const metadata: Metadata = {
 
 /** The upcoming/past split is time-dependent — revalidate hourly. */
 export const revalidate = 3600;
+
+const featuredWorkshops: {
+  slug: string;
+  title: string;
+  href: string;
+  poster: StaticImageData;
+  isPast: boolean;
+}[] = [
+  {
+    slug: "3d-printing-workshop",
+    title: "3D Printing Workshop",
+    href: "/workshops/3d-printing",
+    poster: threeDPrintingPoster,
+    isPast: true,
+  },
+  {
+    slug: "pcb-designing-workshop",
+    title: "PCB Designing Workshop",
+    href: "/workshops/pcb-designing",
+    poster: pcbDesigningPoster,
+    isPast: true,
+  },
+  {
+    slug: "club-carnival",
+    title: "Club Carnival",
+    href: "/workshops/Club_Carnival",
+    poster: clubCarnivalPoster,
+    isPast: true,
+  },
+];
 
 export default function WorkshopsPage() {
   const events = getAllEvents();
@@ -50,7 +84,11 @@ export default function WorkshopsPage() {
           description="Every session is free. Inductions are the ones that unlock a machine — the rest are there because someone wanted to teach them."
           className="mb-8"
         />
-        <EventList events={events} nowIso={nowIso} />
+        <WorkshopEventList
+          events={events}
+          posterEvents={featuredWorkshops}
+          nowIso={nowIso}
+        />
       </Section>
 
       <Section tone="tint" id="calendar" ariaLabelledBy="calendar-heading">
